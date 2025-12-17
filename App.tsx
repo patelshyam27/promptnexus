@@ -103,7 +103,7 @@ function App() {
   const handleAddPrompt = async (input: NewPromptInput) => {
     if (!currentUser) return;
     try {
-      await createPromptApi({ ...input, authorId: currentUser.username }); // API expects authorId
+      await createPromptApi({ ...input, authorId: currentUser.id }); // API expects authorId (UUID)
       refreshPrompts();
       setActiveTab('home'); // Go home after post
     } catch (e) {

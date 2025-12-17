@@ -21,6 +21,25 @@ async function apiPost(path: string, body: any) {
   }
 }
 
+async function apiPut(path: string, body: any) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error('API Error:', path, res.status, data);
+      return { success: false, message: data.error || data.message || `Error ${res.status}` };
+    }
+    return data;
+  } catch (err) {
+    console.error('Network/Server Error:', err);
+    return { success: false, message: "Network or Server Error" };
+  }
+}
+
 async function apiGet(path: string) {
   const res = await fetch(`${API_BASE}${path}`);
   return res.json();
@@ -36,4 +55,9 @@ export const copyPromptApi = (id: string) => apiPost(`/prompts/${id}/copy`, {});
 export const ratePromptApi = (id: string, rating: number, username: string) => apiPost(`/prompts/${id}/rate`, { rating, username });
 export const deletePromptApi = (id: string) => fetch(`${API_BASE}/prompts/${id}`, { method: 'DELETE' }).then(r => r.json());
 
-export default { registerUserApi, loginUserApi, getPromptsApi, createPromptApi, addFeedbackApi, viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi };
+export const getUsersApi = () => apiGet('/users');
+export const getUserApi = (username: string) => apiGet(`/users/${username}`);
+export const updateUserApi = (payload: any) => apiPut('/users/profile', payload);
+export const deleteUserApi = (username: string) => fetch(`${API_BASE}/users/${username}`, { method: 'DELETE' }).then(r => r.json());
+
+export default { registerUserApi, loginUserApi, getPromptsApi, createPromptApi, addFeedbackApi, viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi, getUsersApi, getUserApi, updateUserApi, deleteUserApi };

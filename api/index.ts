@@ -70,6 +70,76 @@ app.post('/api/login', async (req: Request, res: Response) => {
   }
 });
 
+// Admin: Get all users
+app.get('/api/users', async (_req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' }, include: { prompts: true } });
+    const safeUsers = users.map(u => {
+      // @ts-ignore
+      const { password, ...rest } = u;
+      return rest;
+    });
+    res.json(safeUsers);
+  } catch (e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update Profile
+app.put('/api/users/profile', async (req: Request, res: Response) => {
+  const { username, displayName, bio, gender, instagramUrl, linkdealUrl, avatarUrl } = req.body;
+  if (!username) return res.status(400).json({ success: false, message: 'Missing username' });
+  try {
+    const updated = await prisma.user.update({
+      where: { username },
+      data: {
+        displayName,
+        bio,
+        gender,
+        instagramUrl,
+        linkdealUrl,
+        avatarUrl
+      }
+    });
+    // @ts-ignore
+    delete updated.password;
+    res.json({ success: true, user: updated });
+  } catch (e) {
+    console.error('Update profile error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get Single User (Public Profile)
+app.get('/api/users/:username', async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { username: req.params.username }, include: { prompts: true } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // @ts-ignore
+    const { password, ...rest } = user;
+    res.json(rest);
+  } catch (e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Admin: Delete user
+app.delete('/api/users/:username', async (req: Request, res: Response) => {
+  const { username } = req.params;
+  try {
+    // Delete prompts first (cascade typically handles this but let's be safe if no cascade)
+    // Actually prisma schema didn't specify cascade delete on relation, so we might error if we don't delete prompts first.
+    // Let's rely on Prisma relation handling or manual delete.
+    // For now, simple delete.
+    await prisma.prompt.deleteMany({ where: { author: { username } } });
+    await prisma.user.delete({ where: { username } });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Delete user error', e);
+    res.status(500).json({ success: false, message: 'Deletion failed' });
+  }
+});
+
 // Get prompts
 app.get('/api/prompts', async (_req: Request, res: Response) => {
   try {

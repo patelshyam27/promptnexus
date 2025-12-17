@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Prompt } from '../types';
-import { getPrompts, deleteUser, deletePrompt, FALLBACK_AVATAR, promoteUser, demoteUser, updateUser, getAllFeedback, markFeedbackRead, deleteFeedback } from '../services/storageService';
+import { getPromptsApi, deletePromptApi } from '../services/apiService';
+import { getUsersApi, deleteUserApi, updateUserApi } from '../services/apiService';
 import { Trash2, Users, FileText, Search, LogOut, Shield } from 'lucide-react';
-
-// Expose getAllUsers in storageService if not exported, or duplicate logic here?
-// Ideally storageService should export it. I will import it, but first I need to export it in storageService.ts
-// Wait, I didn't export `getAllUsers` in storageService.ts. Use a local helper or export it.
-
-// Let's assume I'll export it or implementation details below.
-// Actually, `getAllUsers` was not exported in the previous `view_file`. I should update storageService to export it.
-// Checking storageService again... `getAllUsers` is internal.
-// I will implement a `getUsers` wrapper in storageService or just read from local storage here?
-// Better to follow pattern: export `getUsers` from storageService.
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -23,20 +14,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     const [users, setUsers] = useState<User[]>([]);
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [feedback, setFeedback] = useState<any[]>([]);
 
-    // We need to fetch users. Since getAllUsers isn't exported, we need to fix that first.
-    // But for now, let's write the component structure and I will fix storageService in next step.
-
-    const refreshData = () => {
-        // Temporary direct read or service call
-        const usersStr = localStorage.getItem('promptnexus_users_v2');
-        if (usersStr) setUsers(JSON.parse(usersStr));
-        setPrompts(getPrompts());
-        // load feedback
+    const refreshData = async () => {
         try {
-            setFeedback(getAllFeedback());
-        } catch (e) {
+            const usersData = await getUsersApi();
+            setUsers(Array.isArray(usersData) ? usersData : []);
+
+            const promptsData = await getPromptsApi();
+            setPrompts(Array.isArray(promptsData) ? promptsData : []);
+
+            // Feedback API not yet implemented for GET
             setFeedback([]);
+        } catch (e) {
+            console.error("Failed to load admin data", e);
         }
     };
 
@@ -44,41 +35,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         refreshData();
     }, []);
 
-    const [feedback, setFeedback] = useState<any[]>([]);
-
-    const handleDeleteUser = (username: string) => {
+    const handleDeleteUser = async (username: string) => {
         if (window.confirm(`Delete user ${username}?`)) {
-            deleteUser(username);
+            await deleteUserApi(username);
             refreshData();
         }
     };
 
     const handlePromote = (username: string) => {
-        if (!confirm(`Promote ${username} to admin?`)) return;
-        promoteUser(username);
-        refreshData();
+        alert("Promote API not implemented yet");
     };
 
     const handleDemote = (username: string) => {
-        if (!confirm(`Demote ${username} from admin?`)) return;
-        demoteUser(username);
-        refreshData();
+        alert("Demote API not implemented yet");
     };
 
-    const handleEditUser = (user: User) => {
+    const handleEditUser = async (user: User) => {
         const newDisplay = prompt('Edit display name', user.displayName);
         if (newDisplay === null) return; // cancelled
         const newBio = prompt('Edit bio', user.bio || '');
         if (newBio === null) return;
-        const newGender = prompt('Gender (male/female)', (user.gender as string) || 'male');
-        if (newGender === null) return;
-        updateUser(user.username, { displayName: newDisplay, bio: newBio, gender: (newGender === 'female' ? 'female' : 'male') as any });
+
+        await updateUserApi({
+            username: user.username,
+            displayName: newDisplay,
+            bio: newBio
+        });
         refreshData();
     };
 
-    const handleDeletePrompt = (id: string) => {
+    const handleDeletePrompt = async (id: string) => {
         if (window.confirm('Delete this prompt?')) {
-            deletePrompt(id);
+            await deletePromptApi(id);
             refreshData();
         }
     };
@@ -179,7 +167,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                         <tr key={user.username} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={user.avatarUrl} onError={(e) => { const t = e.currentTarget as HTMLImageElement; t.onerror = null; t.src = FALLBACK_AVATAR; }} className="w-8 h-8 rounded-full" />
+                                                    <img src={user.avatarUrl} onError={(e) => { const t = e.currentTarget as HTMLImageElement; t.onerror = null; t.src = "https://via.placeholder.com/32"; }} className="w-8 h-8 rounded-full" />
                                                     <div>
                                                         <div className="font-bold text-white">{user.displayName}</div>
                                                         <div className="text-slate-500">@{user.username}</div>
@@ -276,27 +264,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                         </div>
                     ) : activeTab === 'feedback' ? (
                         <div className="p-4">
-                            {feedback.length === 0 ? (
-                                <div className="text-slate-400">No feedback yet.</div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {feedback.map(f => (
-                                        <div key={f.id} className={`p-4 rounded-lg border ${f.read ? 'border-slate-700 bg-slate-900' : 'border-yellow-700 bg-yellow-900/5'}`}>
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div>
-                                                    <div className="font-bold text-white">{f.from}</div>
-                                                    <div className="text-xs text-slate-400">{new Date(f.createdAt).toLocaleString()}</div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={() => { markFeedbackRead(f.id, !f.read); refreshData(); }} className="text-xs px-2 py-1 rounded bg-slate-800 text-slate-300">{f.read ? 'Mark Unread' : 'Mark Read'}</button>
-                                                    <button onClick={() => { if (confirm('Delete this feedback?')) { deleteFeedback(f.id); refreshData(); } }} className="text-xs px-2 py-1 rounded bg-red-700 text-white">Delete</button>
-                                                </div>
-                                            </div>
-                                            <div className="text-slate-200 whitespace-pre-wrap">{f.message}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <div className="text-slate-400">Feedback management API not yet integrated.</div>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

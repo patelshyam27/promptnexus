@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Grid, Users, Verified, Bookmark, Copy, Eye, TrendingUp, Award, BarChart3, Heart, Edit3, X, Save, User as UserIcon, Share2 } from 'lucide-react';
 import { Prompt, User, AIModel } from '../types';
-import { isFollowingUser, toggleFollow, getFavorites, getUserByUsername, updateUser, FALLBACK_AVATAR } from '../services/storageService';
+import { getUserApi, updateUserApi } from '../services/apiService';
 import PromptDetailModal from './PromptDetailModal';
+
+export const FALLBACK_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect fill='%2320282d' width='128' height='128'/><circle cx='64' cy='44' r='26' fill='%234a5568'/><rect x='24' y='80' width='80' height='28' rx='12' fill='%234a5568'/></svg>";
 
 interface UserProfileProps {
   username: string;
@@ -18,6 +20,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
 
   // Edit Form State
   const [editDisplayName, setEditDisplayName] = useState('');
@@ -26,21 +29,48 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   const [editInstagram, setEditInstagram] = useState('');
   const [editLinkdeal, setEditLinkdeal] = useState('');
 
-  // Helper to generate avatar URL based on gender and username
+  // Helper to generate avatar URL
   const generateAvatarUrl = (uName: string, gender: 'male' | 'female') => {
     const s = encodeURIComponent((uName || 'placeholder').trim());
     let url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${s}`;
     if (gender === 'male') {
-      // Male traits
       url += `&top[]=shortHair&top[]=theCaesar&top[]=theCaesarSidePart&facialHairProbability=20&accessoriesProbability=0`;
     } else {
-      // Female traits
       url += `&top[]=longHair&top[]=bob&top[]=straight01&facialHairProbability=0&accessoriesProbability=20`;
     }
     return url;
   };
 
   const isOwnProfile = username === currentUser.username;
+
+  // Favorite logic currently disabled (requires API implementation)
+  const favoritePrompts = useMemo(() => {
+    return [];
+  }, []);
+
+  // Fetch user if not own profile
+  useEffect(() => {
+    if (isOwnProfile) {
+      setProfileUser(currentUser);
+    } else {
+      getUserApi(username).then((data: any) => {
+        // If array (from get all users? no getUserApi returns object), or error
+        if (data && data.username) setProfileUser(data);
+        // Handle 404 or fallback?
+      }).catch(() => setProfileUser(null));
+    }
+  }, [username, currentUser, isOwnProfile]);
+
+  // Use profileUser or fallback
+  const user: User = profileUser || {
+    username: username,
+    displayName: username,
+    bio: '',
+    avatarUrl: generateAvatarUrl(username, 'male'),
+    isVerified: false,
+    gender: 'male',
+    password: ''
+  };
 
   const openEditModal = () => {
     setEditDisplayName(currentUser.displayName);
@@ -51,11 +81,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
     setIsEditModalOpen(true);
   };
 
-  const handleSaveProfile = () => {
-    // Regenerate avatar based on current selection
+  const handleSaveProfile = async () => {
     const newAvatarUrl = generateAvatarUrl(currentUser.username, editGender);
 
-    updateUser(currentUser.username, {
+    await updateUserApi({
+      username: currentUser.username,
       displayName: editDisplayName,
       bio: editBio,
       gender: editGender,
@@ -63,45 +93,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
       linkdealUrl: editLinkdeal || undefined,
       avatarUrl: newAvatarUrl
     });
+
     setIsEditModalOpen(false);
     if (onUserUpdate) onUserUpdate();
   };
 
   // Filter prompts authored by this user (for stats and default view)
   const userCreatedPrompts = useMemo(() =>
-    prompts.filter(p => p.author === username).sort((a, b) => b.createdAt - a.createdAt),
+    prompts.filter(p => p.author === username).sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
     [prompts, username]);
-
-  // Filter prompts favorited by this user (only if it's their own profile for now)
-  const favoritePrompts = useMemo(() => {
-    if (!isOwnProfile) return [];
-    const favIds = getFavorites(username);
-    return prompts.filter(p => favIds.includes(p.id)).sort((a, b) => b.createdAt - a.createdAt);
-  }, [prompts, username, isOwnProfile]);
 
   // Determine which prompts to show based on tab
   const displayPrompts = useMemo(() => {
     if (activeTab === 'favorites') return favoritePrompts;
     return userCreatedPrompts;
   }, [activeTab, userCreatedPrompts, favoritePrompts]);
-
-  // Determine User Details
-  const user: User = useMemo(() => {
-    if (isOwnProfile) return currentUser;
-    const foundUser = getUserByUsername(username);
-    if (foundUser) return foundUser;
-
-    // Fallback if user not found (shouldn't happen often in this mock)
-    return {
-      username: username,
-      displayName: username,
-      bio: `Member since ${new Date().getFullYear()}`,
-      avatarUrl: generateAvatarUrl(username, 'male'), // Default fallback
-      isVerified: false,
-      gender: 'male',
-      password: '' // Required by type, even if mock
-    };
-  }, [username, isOwnProfile, currentUser]);
 
   // --- Statistics Calculation (Based on created prompts) ---
   const totalViews = userCreatedPrompts.reduce((acc, curr) => acc + curr.viewCount, 0);
@@ -159,7 +165,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
             onClick={isOwnProfile ? openEditModal : undefined}
           >
             <div className="w-24 h-24 md:w-40 md:h-40 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 shadow-2xl">
-                <div className="w-full h-full rounded-full border-4 border-slate-950 overflow-hidden bg-slate-800 relative">
+              <div className="w-full h-full rounded-full border-4 border-slate-950 overflow-hidden bg-slate-800 relative">
                 <img
                   src={user.avatarUrl}
                   alt={user.username}
@@ -390,7 +396,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
               {/* Live Avatar Preview */}
               <div className="flex flex-col items-center">
                 <div className="w-24 h-24 rounded-full p-[2px] bg-gradient-to-tr from-primary-500 to-purple-600 mb-2">
-                    <div className="w-full h-full rounded-full border-4 border-slate-950 overflow-hidden bg-slate-800">
+                  <div className="w-full h-full rounded-full border-4 border-slate-950 overflow-hidden bg-slate-800">
                     <img
                       src={generateAvatarUrl(currentUser.username, editGender)}
                       onError={(e) => { const t = e.currentTarget as HTMLImageElement; t.onerror = null; t.src = FALLBACK_AVATAR; }}
@@ -407,8 +413,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
                   <button
                     onClick={() => setEditGender('male')}
                     className={`relative p-3 rounded-xl border flex flex-col items-center gap-2 transition-all group overflow-hidden ${editGender === 'male'
-                        ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
-                        : 'bg-slate-800 border-slate-700 hover:bg-slate-750'
+                      ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
+                      : 'bg-slate-800 border-slate-700 hover:bg-slate-750'
                       }`}
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-900 border border-slate-700">
@@ -421,8 +427,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
                   <button
                     onClick={() => setEditGender('female')}
                     className={`relative p-3 rounded-xl border flex flex-col items-center gap-2 transition-all group overflow-hidden ${editGender === 'female'
-                        ? 'bg-pink-900/20 border-pink-500 ring-1 ring-pink-500/50'
-                        : 'bg-slate-800 border-slate-700 hover:bg-slate-750'
+                      ? 'bg-pink-900/20 border-pink-500 ring-1 ring-pink-500/50'
+                      : 'bg-slate-800 border-slate-700 hover:bg-slate-750'
                       }`}
                   >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-900 border border-slate-700">

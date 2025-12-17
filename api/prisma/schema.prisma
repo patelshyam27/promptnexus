@@ -19,6 +19,10 @@ model User {
   isVerified Boolean  @default(false)
   gender     String?
   createdAt  DateTime @default(now())
+  instagramUrl String?
+  linkdealUrl  String?
+  websiteUrl   String?
+
   prompts    Prompt[]
 }
 
