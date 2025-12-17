@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "cd api && npm install && npx prisma generate"
   },
   "dependencies": {
     "react": "^19.2.0",
