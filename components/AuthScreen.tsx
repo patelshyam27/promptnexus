@@ -73,9 +73,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           setError(result.message || 'Registration failed');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('An error occurred. Please try again.');
+      setError(err?.message || 'An error occurred. Please try again.');
     }
     setIsLoading(false);
   };
@@ -164,8 +164,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     type="button"
                     onClick={() => setGender('male')}
                     className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all group ${gender === 'male'
-                        ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
-                        : 'bg-black/50 border-slate-700 hover:bg-slate-800'
+                      ? 'bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
+                      : 'bg-black/50 border-slate-700 hover:bg-slate-800'
                       }`}
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-600">
@@ -182,8 +182,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     type="button"
                     onClick={() => setGender('female')}
                     className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all group ${gender === 'female'
-                        ? 'bg-pink-900/20 border-pink-500 ring-1 ring-pink-500/50'
-                        : 'bg-black/50 border-slate-700 hover:bg-slate-800'
+                      ? 'bg-pink-900/20 border-pink-500 ring-1 ring-pink-500/50'
+                      : 'bg-black/50 border-slate-700 hover:bg-slate-800'
                       }`}
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-600">

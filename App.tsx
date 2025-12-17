@@ -81,8 +81,12 @@ function App() {
 
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
-    // Persist session locally
-    localStorage.setItem('promptnexus_session_v2', JSON.stringify(user));
+    // Persist session locally (safely)
+    try {
+      localStorage.setItem('promptnexus_session_v2', JSON.stringify(user));
+    } catch (e) {
+      console.warn("Failed to save session to localStorage", e);
+    }
     if (user.isAdmin) {
       setActiveTab('admin');
     } else {
