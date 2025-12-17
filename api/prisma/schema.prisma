@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  username   String   @unique
+  displayName String?
+  bio        String?
+  password   String
+  avatarUrl  String?
+  isAdmin    Boolean  @default(false)
+  isVerified Boolean  @default(false)
+  gender     String?
+  createdAt  DateTime @default(now())
+  prompts    Prompt[]
+  feedbacks  Feedback[]
+}
+
+model Prompt {
+  id         String   @id @default(uuid())
+  title      String
+  content    String
+  model      String?
+  tags       String?
+  viewCount  Int      @default(0)
+  copyCount  Int      @default(0)
+  rating     Float    @default(0)
+  ratingCount Int     @default(0)
+  createdAt  DateTime @default(now())
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  from      String
+  message   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+}

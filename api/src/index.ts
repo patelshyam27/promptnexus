@@ -1,0 +1,95 @@
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
+import { prisma } from './db';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 4000;
+
+app.use(cors({ origin: true }));
+app.use(bodyParser.json());
+
+// Health
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// Register
+app.post('/api/register', async (req, res) => {
+  const { username, password, displayName, bio, gender, avatarUrl } = req.body;
+  if (!username || !password || !displayName) return res.status(400).json({ success: false, message: 'Missing fields' });
+  try {
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (existing) return res.status(400).json({ success: false, message: 'Username already exists' });
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({ data: { username, password: hashed, displayName, bio: bio || '', gender: gender || null, avatarUrl: avatarUrl || null } });
+    // Do not return password
+    // @ts-ignore
+    delete user.password;
+    res.json({ success: true, user });
+  } catch (e) {
+    console.error('Register error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Login
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ success: false, message: 'Missing fields' });
+  try {
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user) return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    // @ts-ignore
+    delete user.password;
+    res.json({ success: true, user });
+  } catch (e) {
+    console.error('Login error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get prompts
+app.get('/api/prompts', async (_req, res) => {
+  try {
+    const prompts = await prisma.prompt.findMany({ orderBy: { createdAt: 'desc' }, include: { author: true } });
+    res.json(prompts);
+  } catch (e) {
+    console.error('Get prompts error', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create prompt
+app.post('/api/prompts', async (req, res) => {
+  const { title, content, model, tags, authorId } = req.body;
+  if (!title || !content || !authorId) return res.status(400).json({ success: false, message: 'Missing fields' });
+  try {
+    const p = await prisma.prompt.create({ data: { title, content, model: model || null, tags: tags || null, authorId } });
+    res.json({ success: true, prompt: p });
+  } catch (e) {
+    console.error('Create prompt error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Feedback
+app.post('/api/feedback', async (req, res) => {
+  const { from, message } = req.body;
+  if (!from || !message) return res.status(400).json({ success: false, message: 'Missing fields' });
+  try {
+    const fb = await prisma.feedback.create({ data: { from, message } });
+    res.json({ success: true, feedback: fb });
+  } catch (e) {
+    console.error('Feedback error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`API listening on http://localhost:${PORT}`);
+});

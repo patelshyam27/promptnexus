@@ -256,7 +256,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       </div>
       
       <div className="mt-8 text-slate-500 text-xs">
-        © 2024 PromptNexus. Demo Application.
+        © 2025 PromptNexus. Demo Application.
       </div>
     </div>
   );
