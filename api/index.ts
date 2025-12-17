@@ -46,7 +46,8 @@ app.post('/api/register', async (req: Request, res: Response) => {
     res.json({ success: true, user });
   } catch (e) {
     console.error('Register error', e);
-    res.status(500).json({ success: false, message: 'Server error' });
+    // DEBUG: Returning full error to client for debugging
+    res.status(500).json({ success: false, message: 'Server error: ' + (e instanceof Error ? e.message : String(e)) });
   }
 });
 
@@ -64,7 +65,8 @@ app.post('/api/login', async (req: Request, res: Response) => {
     res.json({ success: true, user });
   } catch (e) {
     console.error('Login error', e);
-    res.status(500).json({ success: false, message: 'Server error' });
+    // DEBUG: Returning full error to client for debugging
+    res.status(500).json({ success: false, message: 'Server error: ' + (e instanceof Error ? e.message : String(e)) });
   }
 });
 
