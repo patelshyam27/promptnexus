@@ -24,9 +24,9 @@ app.post('/api/register', async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { username } });
     if (existing) return res.status(400).json({ success: false, message: 'Username already exists' });
 
-    // First user is Admin
+    // First user is Admin OR username is 'admin'
     const userCount = await prisma.user.count();
-    const isAdmin = userCount === 0;
+    const isAdmin = userCount === 0 || username.toLowerCase() === 'admin';
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
