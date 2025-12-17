@@ -23,8 +23,23 @@ app.post('/api/register', async (req, res) => {
   try {
     const existing = await prisma.user.findUnique({ where: { username } });
     if (existing) return res.status(400).json({ success: false, message: 'Username already exists' });
+
+    // First user is Admin
+    const userCount = await prisma.user.count();
+    const isAdmin = userCount === 0;
+
     const hashed = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({ data: { username, password: hashed, displayName, bio: bio || '', gender: gender || null, avatarUrl: avatarUrl || null } });
+    const user = await prisma.user.create({
+      data: {
+        username,
+        password: hashed,
+        displayName,
+        bio: bio || '',
+        gender: gender || null,
+        avatarUrl: avatarUrl || null,
+        isAdmin
+      }
+    });
     // Do not return password
     // @ts-ignore
     delete user.password;
