@@ -54,6 +54,8 @@ export interface Prompt {
   ratingCount: number; // Total number of ratings
   createdAt: number;
   tags: string[];
+  isFavorited?: boolean;
+  favoriteCount?: number;
 }
 
 export interface NewPromptInput {

@@ -24,6 +24,7 @@ model User {
   websiteUrl   String?
 
   prompts    Prompt[]
+  favorites  Favorite[]
 }
 
 model Prompt {
@@ -39,12 +40,24 @@ model Prompt {
   createdAt  DateTime @default(now())
   author     User     @relation(fields: [authorId], references: [id])
   authorId   String
+  favoritedBy Favorite[]
 }
 
 model Feedback {
   id        String   @id @default(uuid())
   from      String
   message   String
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
   read      Boolean  @default(false)
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  prompt    Prompt   @relation(fields: [promptId], references: [id])
+  promptId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, promptId])
 }

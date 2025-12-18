@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MoreHorizontal, Heart, MessageCircle, Send, Bookmark, Copy, Check, Star, ExternalLink, Trash2 } from 'lucide-react';
 import { Prompt, User, AIModel } from '../types';
-import { viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi } from '../services/apiService';
+import { viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi, toggleFavoriteApi } from '../services/apiService';
 
 interface PromptDetailModalProps {
   prompt: Prompt | null;
@@ -19,8 +19,8 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
 
   useEffect(() => {
     if (prompt) {
-      // isPromptFavorite not implemented in backend yet
-      setIsFavorite(false);
+      // isPromptFavorite initialized from prop
+      setIsFavorite(!!prompt.isFavorited);
       // getUserRating not implemented in backend yet, defaulting to 0
       setUserRating(0);
 
@@ -43,9 +43,17 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
     }
   };
 
-  const handleFavorite = () => {
-    // TODO: Backend Favorites
-    alert("Favorites coming soon!");
+  const handleFavorite = async () => {
+    if (!prompt) return;
+    try {
+      const res = await toggleFavoriteApi(prompt.id, currentUser.username);
+      if (res.success) {
+        setIsFavorite(res.favorited);
+        onRefresh(); // Refresh parent list to update favorite counts
+      }
+    } catch (e) {
+      console.error('Toggle favorite error', e);
+    }
   };
 
   const handleRate = async (rating: number) => {

@@ -154,14 +154,25 @@ app.delete('/api/users/:username', async (req: Request, res: Response) => {
 });
 
 // Get prompts
-app.get('/api/prompts', async (_req: Request, res: Response) => {
+app.get('/api/prompts', async (req: Request, res: Response) => {
   try {
-    const prompts = await prisma.prompt.findMany({ orderBy: { createdAt: 'desc' }, include: { author: true } });
+    const { userId } = req.query; // Optional user ID to check if favorited
+    const prompts = await prisma.prompt.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: true,
+        favoritedBy: true
+      }
+    });
     const formatted = prompts.map(p => ({
       ...p,
-      author: p.author.username, // Flatten author to username
-      tags: p.tags ? p.tags.split(',').filter(Boolean) : [], // Split tags string to array
-      authorDetails: p.author // Optional: keep full details if needed later, but types say string
+      author: p.author.username,
+      tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
+      authorDetails: p.author,
+      // Add favorite info
+      favoritedBy: p.favoritedBy.map(f => f.userId),
+      isFavorited: typeof userId === 'string' ? p.favoritedBy.some(f => f.userId === userId) : false,
+      favoriteCount: p.favoritedBy.length
     }));
     res.json(formatted);
   } catch (e) {
@@ -206,7 +217,12 @@ app.post('/api/feedback', async (req: Request, res: Response) => {
 app.get('/api/feedback', async (_req: Request, res: Response) => {
   try {
     const feedback = await prisma.feedback.findMany({ orderBy: { createdAt: 'desc' } });
-    res.json(feedback);
+    // Explicitly format date for frontend
+    const formatted = feedback.map(f => ({
+      ...f,
+      createdAt: f.createdAt.toISOString() // Ensure standard ISO string
+    }));
+    res.json(formatted);
   } catch (e) {
     console.error('Get feedback error', e);
     res.status(500).json({ message: 'Server error' });
@@ -271,9 +287,6 @@ app.post('/api/prompts/:id/rate', async (req: Request, res: Response) => {
     if (!prompt) return res.status(404).json({ success: false });
 
     // Simple rating logic: re-calculate average
-    // In a real app we would store individual ratings in a separate table
-    // For now, we will just update the average with a weighted approximation or ignore for simplicity
-    // Actually, let's just increment ratingCount and update rating
     const newCount = prompt.ratingCount + 1;
     const newRating = ((prompt.rating * prompt.ratingCount) + rating) / newCount;
 
@@ -284,6 +297,36 @@ app.post('/api/prompts/:id/rate', async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false });
+  }
+});
+
+// Toggle Favorite
+app.post('/api/prompts/:id/favorite', async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  const { id } = req.params;
+  if (!userId) return res.status(400).json({ success: false, message: 'Missing user ID' });
+
+  try {
+    const existing = await prisma.favorite.findUnique({
+      where: { userId_promptId: { userId, promptId: id } }
+    });
+
+    if (existing) {
+      // Unfavorite
+      await prisma.favorite.delete({
+        where: { userId_promptId: { userId, promptId: id } }
+      });
+      res.json({ success: true, favorited: false });
+    } else {
+      // Favorite
+      await prisma.favorite.create({
+        data: { userId, promptId: id }
+      });
+      res.json({ success: true, favorited: true });
+    }
+  } catch (e) {
+    console.error('Favorite error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
