@@ -7,6 +7,7 @@ import { getPromptsApi, createPromptApi } from './services/apiService';
 import { getCurrentUser, logoutUser } from './services/storageService'; // Helper for local session
 import PromptCard from './components/PromptCard';
 import AddPromptModal from './components/AddPromptModal';
+import GoogleAd from './components/GoogleAd';
 // StatsChart and AdBanner imports removed as they are no longer used
 import UserProfile from './components/UserProfile';
 import ExploreView from './components/ExploreView';
@@ -295,16 +296,21 @@ function App() {
                   {/* Feed List */}
                   <div className="space-y-6 pb-24 md:pb-0">
                     {homeFeedPrompts.length > 0 ? (
-                      homeFeedPrompts.map((prompt) => (
-                        <PromptCard
-                          key={prompt.id}
-                          prompt={prompt}
-                          currentUser={currentUser}
-                          onRefresh={refreshPrompts}
-                          onAuthorClick={navigateToProfile}
-                          onClick={() => setActivePrompt(prompt)}
-                          onEdit={(p) => setEditingPrompt(p)}
-                        />
+                      homeFeedPrompts.map((prompt, index) => (
+                        <React.Fragment key={prompt.id}>
+                          <PromptCard
+                            prompt={prompt}
+                            currentUser={currentUser}
+                            onRefresh={refreshPrompts}
+                            onAuthorClick={navigateToProfile}
+                            onClick={() => setActivePrompt(prompt)}
+                            onEdit={(p) => setEditingPrompt(p)}
+                          />
+                          {/* Insert Ad after every 5th post */}
+                          {(index + 1) % 5 === 0 && (
+                            <GoogleAd />
+                          )}
+                        </React.Fragment>
                       ))
                     ) : (
                       <div className="flex flex-col items-center justify-center py-20 text-slate-500">
