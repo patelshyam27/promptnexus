@@ -267,10 +267,21 @@ function App() {
                 <Zap size={20} className="text-primary-500" fill="currentColor" />
                 <span className="font-bold text-lg">PromptNexus</span>
               </div>
-              <div className="flex items-center gap-4">
-                <button onClick={handleLogout} className="text-slate-400">
-                  <LogOut size={20} />
+              <div className="relative">
+                <button
+                  onClick={() => setIsMoreMenuOpen(true)}
+                  className="text-slate-400 hover:text-white p-2"
+                >
+                  <Menu size={24} />
                 </button>
+                {/* Mobile More Menu Instance */}
+                <MoreMenu
+                  isOpen={isMoreMenuOpen}
+                  onClose={() => setIsMoreMenuOpen(false)}
+                  onLogout={handleLogout}
+                  currentUser={currentUser}
+                  className="right-0 top-12 shadow-xl border border-slate-800/50"
+                />
               </div>
             </div>
 

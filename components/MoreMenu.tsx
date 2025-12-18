@@ -7,9 +7,10 @@ interface MoreMenuProps {
     onClose: () => void;
     onLogout: () => void;
     currentUser: User | null;
+    className?: string; // Allow overriding position
 }
 
-const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentUser }) => {
+const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentUser, className }) => {
     const [activeModal, setActiveModal] = useState<'settings' | 'about' | null>(null);
     const [themeColor, setThemeColor] = useState('teal'); // Default, actual implementation would need context
 
@@ -99,7 +100,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentU
     return (
         <>
             <div className="fixed inset-0 z-40" onClick={onClose} />
-            <div className="absolute left-4 bottom-20 w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+            <div className={`absolute w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200 ${className || 'left-4 bottom-20'}`}>
                 <div className="p-2 space-y-1">
                     <button
                         onClick={() => { setActiveModal('settings'); }}
