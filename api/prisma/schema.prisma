@@ -61,3 +61,8 @@ model Favorite {
 
   @@unique([userId, promptId])
 }
+
+model SystemSetting {
+  key   String @id
+  value String
+}

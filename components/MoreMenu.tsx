@@ -15,9 +15,16 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentU
 
     if (!isOpen && !activeModal) return null;
 
-    const handleFeedback = () => {
-        // Replace with actual Google Form URL provided by admin later
-        window.open('https://forms.google.com/placeholder', '_blank');
+    const handleFeedback = async () => {
+        // Fetch dynamic URL or use fallback
+        try {
+            const { getSettingApi } = await import('../services/apiService');
+            const res = await getSettingApi('feedbackUrl');
+            const url = (res && res.success && res.value) ? res.value : 'https://forms.google.com/placeholder';
+            window.open(url, '_blank');
+        } catch (e) {
+            window.open('https://forms.google.com/placeholder', '_blank');
+        }
         onClose();
     };
 
@@ -43,8 +50,8 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentU
                                         key={color}
                                         onClick={() => setThemeColor(color)}
                                         className={`h-10 rounded-lg border flex items-center justify-center transition-all ${themeColor === color
-                                                ? `border-${color}-500 bg-${color}-500/20 text-${color}-400`
-                                                : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                                            ? `border-${color}-500 bg-${color}-500/20 text-${color}-400`
+                                            : 'border-slate-700 bg-slate-800 hover:border-slate-600'
                                             }`}
                                     >
                                         {themeColor === color && <Check size={16} />}

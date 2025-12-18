@@ -66,4 +66,17 @@ export const markFeedbackReadApi = (id: string, read: boolean) => apiPut(`/feedb
 export const deleteFeedbackApi = (id: string) => fetch(`${API_BASE}/feedback/${id}`, { method: 'DELETE' }).then(r => r.json());
 export const toggleFavoriteApi = (id: string, userId: string) => apiPost(`/prompts/${id}/favorite`, { userId });
 
-export default { registerUserApi, loginUserApi, getPromptsApi, createPromptApi, updatePromptApi, addFeedbackApi, viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi, getUsersApi, getUserApi, updateUserApi, deleteUserApi, getFeedbackApi, markFeedbackReadApi, deleteFeedbackApi, toggleFavoriteApi };
+export const getSettingApi = async (key: string) => {
+  try {
+    const res = await apiGet(`/settings/${key}`);
+    return res;
+  } catch (e) {
+    return { success: false, value: '' };
+  }
+};
+
+export const updateSettingApi = async (key: string, value: string, authorId: string) => {
+  return apiPut(`/settings/${key}`, { value, authorId });
+};
+
+export default { registerUserApi, loginUserApi, getPromptsApi, createPromptApi, updatePromptApi, addFeedbackApi, viewPromptApi, copyPromptApi, ratePromptApi, deletePromptApi, getUsersApi, getUserApi, updateUserApi, deleteUserApi, getFeedbackApi, markFeedbackReadApi, deleteFeedbackApi, toggleFavoriteApi, getSettingApi, updateSettingApi };

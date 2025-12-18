@@ -365,6 +365,38 @@ app.post('/api/prompts/:id/favorite', async (req: Request, res: Response) => {
   }
 });
 
+// --- System Settings ---
+
+app.get('/api/settings/:key', async (req: Request, res: Response) => {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: req.params.key }
+    });
+    res.json({ success: true, value: setting?.value || '' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.put('/api/settings/:key', async (req: Request, res: Response) => {
+  const { authorId, value } = req.body;
+  if (!authorId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  try {
+    const admin = await prisma.user.findUnique({ where: { id: authorId } });
+    if (!admin || !admin.isAdmin) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    await prisma.systemSetting.upsert({
+      where: { key: req.params.key },
+      update: { value },
+      create: { key: req.params.key, value }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`API listening on http://localhost:${PORT}`);

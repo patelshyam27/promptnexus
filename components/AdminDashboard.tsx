@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Prompt } from '../types';
 import { getPromptsApi, deletePromptApi } from '../services/apiService';
-import { getUsersApi, deleteUserApi, updateUserApi, getFeedbackApi, markFeedbackReadApi, deleteFeedbackApi } from '../services/apiService';
-import { Trash2, Users, FileText, Search, LogOut, Shield } from 'lucide-react';
+import { getUsersApi, deleteUserApi, updateUserApi, getFeedbackApi, markFeedbackReadApi, deleteFeedbackApi, getSettingApi, updateSettingApi } from '../services/apiService';
+import { Trash2, Users, FileText, Search, LogOut, Shield, Settings, Save, AlertCircle } from 'lucide-react';
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -10,11 +10,15 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }) => {
-    const [activeTab, setActiveTab] = useState<'users' | 'prompts' | 'feedback'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'prompts' | 'feedback' | 'settings'>('users');
     const [users, setUsers] = useState<User[]>([]);
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [feedback, setFeedback] = useState<any[]>([]);
+
+    // Settings State
+    const [feedbackUrl, setFeedbackUrl] = useState('');
+    const [savingSettings, setSavingSettings] = useState(false);
 
     const refreshData = async () => {
         try {
@@ -26,6 +30,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
 
             const feedbackData = await getFeedbackApi();
             setFeedback(Array.isArray(feedbackData) ? feedbackData : []);
+
+            const settingsData = await getSettingApi('feedbackUrl');
+            if (settingsData && settingsData.success) {
+                setFeedbackUrl(settingsData.value);
+            }
         } catch (e) {
             console.error("Failed to load admin data", e);
         }
@@ -34,6 +43,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     useEffect(() => {
         refreshData();
     }, []);
+
+    const handleSaveSettings = async () => {
+        setSavingSettings(true);
+        try {
+            console.log('Sending update with authorId:', currentUser.id);
+            const res = await updateSettingApi('feedbackUrl', feedbackUrl, currentUser.id);
+            if (res.success) {
+                alert('Settings saved successfully');
+            } else {
+                alert('Failed to save settings: ' + (res.message || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Error saving settings');
+        } finally {
+            setSavingSettings(false);
+        }
+    };
 
     const handleDeleteUser = async (username: string) => {
         if (window.confirm(`Delete user ${username}?`)) {
@@ -75,25 +101,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     const filteredPrompts = prompts.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-10">
+        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans p-4 md:p-8 overflow-x-hidden">
+            <div className="max-w-7xl mx-auto w-full">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-600/20 border border-red-500/50 rounded-lg">
+                        <div className="p-2 bg-red-600/20 border border-red-500/50 rounded-lg shrink-0">
                             <Shield className="text-red-500" size={32} />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-                            <p className="text-slate-400">Welcome back, {currentUser.displayName}</p>
+                            <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
+                            <p className="text-slate-400 text-sm">Welcome back, {currentUser.displayName}</p>
                         </div>
                     </div>
-                    <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors">
+                    <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors w-full md:w-auto justify-center">
                         <LogOut size={18} /> Logout
                     </button>
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
                     <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-slate-400 font-medium">Total Users</h3>
@@ -109,52 +135,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                         <p className="text-4xl font-bold text-white">{prompts.length}</p>
                     </div>
                     <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-center">
-                        <div className="text-slate-400 text-sm">Admin utilities are limited in this demo.</div>
+                        <div className="text-center">
+                            <div className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">System Status</div>
+                            <div className="text-green-400 font-bold flex items-center gap-2 justify-center">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                </span>
+                                Operational
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-4 border-b border-slate-800 mb-6">
+                <div className="flex overflow-x-auto gap-4 border-b border-slate-800 mb-6 no-scrollbar">
                     <button
                         onClick={() => setActiveTab('users')}
-                        className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'users' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'users' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Users Management
                         {activeTab === 'users' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500" />}
                     </button>
                     <button
                         onClick={() => setActiveTab('prompts')}
-                        className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'prompts' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'prompts' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Prompt Management
                         {activeTab === 'prompts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500" />}
                     </button>
                     <button
                         onClick={() => setActiveTab('feedback')}
-                        className={`pb-3 px-4 font-semibold text-sm transition-colors relative ${activeTab === 'feedback' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'feedback' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Feedback
                         {activeTab === 'feedback' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-500" />}
                     </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'settings' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        Settings
+                        {activeTab === 'settings' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-500" />}
+                    </button>
                 </div>
 
                 {/* Search */}
-                <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
-                    <input
-                        type="text"
-                        placeholder={`Search ${activeTab}...`}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
-                    />
-                </div>
+                {activeTab !== 'settings' && (
+                    <div className="relative mb-6">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                        <input
+                            type="text"
+                            placeholder={`Search ${activeTab}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 pl-10 pr-4 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                        />
+                    </div>
+                )}
 
-                {/* Content Table */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                {/* Content Area */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden min-w-0">
                     {activeTab === 'users' ? (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
+                            <table className="w-full text-left text-sm min-w-[600px]">
                                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                                     <tr>
                                         <th className="px-6 py-4">User</th>
@@ -198,12 +242,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                                     Edit
                                                 </button>
 
-                                                {user.isAdmin ? (
-                                                    <button onClick={() => handleDemote(user.username)} className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg">Demote</button>
-                                                ) : (
-                                                    <button onClick={() => handlePromote(user.username)} className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-lg">Promote</button>
-                                                )}
-
+                                                {/* Removed Demote/Promote buttons for cleaner UI as per user desire for 'proper view' - kept delete */}
                                                 {!user.isAdmin && (
                                                     <button
                                                         onClick={() => handleDeleteUser(user.username)}
@@ -221,7 +260,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                         </div>
                     ) : activeTab === 'prompts' ? (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
+                            <table className="w-full text-left text-sm min-w-[600px]">
                                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                                     <tr>
                                         <th className="px-6 py-4">Prompt</th>
@@ -297,47 +336,55 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                             )}
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
-                                    <tr>
-                                        <th className="px-6 py-4">Prompt</th>
-                                        <th className="px-6 py-4">Category</th>
-                                        <th className="px-6 py-4">Model</th>
-                                        <th className="px-6 py-4">Stats</th>
-                                        <th className="px-6 py-4">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-800">
-                                    {filteredPrompts.map(prompt => (
-                                        <tr key={prompt.id} className="hover:bg-slate-800/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-white max-w-xs truncate">{prompt.title}</div>
-                                                <div className="text-xs text-slate-500">by @{prompt.author}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-slate-300">{prompt.category}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-slate-300">{prompt.model}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-xs text-slate-400">
-                                                <div>{prompt.viewCount} views</div>
-                                                <div>{prompt.rating.toFixed(1)} ★</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <button
-                                                    onClick={() => handleDeletePrompt(prompt.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                    title="Delete Prompt"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        // Settings Tab
+                        <div className="p-6">
+                            <h2 className="text-xl font-bold text-white mb-6">System Configuration</h2>
+
+                            <div className="space-y-8 max-w-2xl">
+                                <div className="bg-black/30 p-6 rounded-xl border border-slate-800">
+                                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <Settings size={20} className="text-slate-400" />
+                                        General Settings
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">Feedback Form URL</label>
+                                            <div className="text-xs text-slate-500 mb-2">The Google Form link opened by the "Feedback" button in the More menu.</div>
+                                            <input
+                                                type="url"
+                                                value={feedbackUrl}
+                                                onChange={(e) => setFeedbackUrl(e.target.value)}
+                                                placeholder="https://forms.google.com/..."
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 flex justify-end">
+                                        <button
+                                            onClick={handleSaveSettings}
+                                            disabled={savingSettings}
+                                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {savingSettings ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-900/10 p-6 rounded-xl border border-red-900/30">
+                                    <h3 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
+                                        <AlertCircle size={20} />
+                                        Maintenance
+                                    </h3>
+                                    <p className="text-slate-400 text-sm mb-4">
+                                        System-wide actions like clearing caches or resetting temporary data.
+                                    </p>
+                                    <button className="px-4 py-2 bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 rounded-lg text-sm transition-colors">
+                                        Clear System Cache
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
