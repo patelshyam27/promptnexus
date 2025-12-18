@@ -265,9 +265,7 @@ app.put('/api/prompts/:id', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+
 
 // Feedback
 app.post('/api/feedback', async (req: Request, res: Response) => {
