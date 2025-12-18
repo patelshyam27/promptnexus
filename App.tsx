@@ -267,23 +267,21 @@ function App() {
                 <Zap size={20} className="text-primary-500" fill="currentColor" />
                 <span className="font-bold text-lg">PromptNexus</span>
               </div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsMoreMenuOpen(true)}
-                  className="text-slate-400 hover:text-white p-2"
-                >
-                  <Menu size={24} />
-                </button>
-                {/* Mobile More Menu Instance */}
-                <MoreMenu
-                  isOpen={isMoreMenuOpen}
-                  onClose={() => setIsMoreMenuOpen(false)}
-                  onLogout={handleLogout}
-                  currentUser={currentUser}
-                  className="right-0 top-12 shadow-xl border border-slate-800/50"
-                />
+              <div onClick={() => navigateToProfile(currentUser.username)}>
+                <div className={`w-9 h-9 rounded-full p-[1px] ${activeTab === 'profile' ? 'bg-primary-500' : 'bg-slate-700'}`}>
+                  <img src={currentUser.avatarUrl} className="w-full h-full rounded-full bg-black object-cover" />
+                </div>
               </div>
             </div>
+
+            {/* Mobile More Menu Instance - Positioned for bottom right access */}
+            <MoreMenu
+              isOpen={isMoreMenuOpen}
+              onClose={() => setIsMoreMenuOpen(false)}
+              onLogout={handleLogout}
+              currentUser={currentUser}
+              className="fixed right-2 bottom-20 shadow-xl border border-slate-800/50 z-50"
+            />
 
             <div className="max-w-screen-lg mx-auto min-h-screen">
 
@@ -379,13 +377,12 @@ function App() {
             <NavItem tab="home" icon={Home} label="" />
             <NavItem tab="explore" icon={Search} label="" />
             <NavItem tab="create" icon={PlusSquare} label="" onClick={() => setIsModalOpen(true)} />
-            <div onClick={() => navigateToProfile(currentUser.username)}>
-              <button className={`p-3 ${activeTab === 'profile' ? 'text-white' : 'text-slate-400'}`}>
-                <div className={`w-7 h-7 rounded-full p-[1px] ${activeTab === 'profile' ? 'bg-white' : 'bg-slate-700'}`}>
-                  <img src={currentUser.avatarUrl} className="w-full h-full rounded-full bg-black" />
-                </div>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-200 group justify-center ${isMoreMenuOpen ? 'text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Menu size={26} className={`transition-transform duration-200 ${isMoreMenuOpen ? 'scale-110' : 'group-hover:scale-110'}`} />
+            </button>
           </nav>
 
           <AddPromptModal
