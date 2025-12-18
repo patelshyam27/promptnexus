@@ -181,13 +181,13 @@ app.get('/api/prompts', async (req: Request, res: Response) => {
     });
     const formatted = prompts.map(p => ({
       ...p,
-      author: p.author.username,
+      author: p.author ? p.author.username : 'Unknown',
       tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
-      authorDetails: p.author,
+      authorDetails: p.author || null,
       // Add favorite info
-      favoritedBy: p.favoritedBy.map(f => f.userId),
-      isFavorited: typeof userId === 'string' ? p.favoritedBy.some(f => f.userId === userId) : false,
-      favoriteCount: p.favoritedBy.length
+      favoritedBy: p.favoritedBy ? p.favoritedBy.map(f => f.userId) : [],
+      isFavorited: typeof userId === 'string' && p.favoritedBy ? p.favoritedBy.some(f => f.userId === userId) : false,
+      favoriteCount: p.favoritedBy ? p.favoritedBy.length : 0
     }));
     res.json(formatted);
   } catch (e) {
