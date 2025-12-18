@@ -13,7 +13,7 @@ import ExploreView from './components/ExploreView';
 import AuthScreen from './components/AuthScreen';
 import AdminDashboard from './components/AdminDashboard';
 import PromptDetailModal from './components/PromptDetailModal';
-import FeedbackWidget from './components/FeedbackWidget';
+
 
 type ViewState = 'home' | 'explore' | 'profile' | 'create' | 'admin';
 
@@ -324,7 +324,7 @@ function App() {
             currentUser={currentUser}
             onRefresh={refreshPrompts}
           />
-          <FeedbackWidget currentUser={currentUser} />
+
         </>
       )}
 

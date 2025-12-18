@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Grid, Users, Verified, Bookmark, Copy, Eye, TrendingUp, Award, BarChart3, Heart, Edit3, X, Save, User as UserIcon, Share2 } from 'lucide-react';
+import { Grid, Users, Verified, Bookmark, Copy, Eye, TrendingUp, Award, BarChart3, Edit3, X, Save, User as UserIcon, Share2 } from 'lucide-react';
 import { Prompt, User, AIModel, NewPromptInput } from '../types';
 import { getUserApi, updateUserApi, updatePromptApi } from '../services/apiService';
 import PromptDetailModal from './PromptDetailModal';
@@ -15,7 +15,7 @@ interface UserProfileProps {
   onUserUpdate?: () => void;
 }
 
-type ProfileTab = 'posts' | 'favorites' | 'insights' | 'tagged';
+type ProfileTab = 'posts' | 'insights' | 'tagged';
 
 const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUser, onRefresh, onUserUpdate }) => {
   const [activePrompt, setActivePrompt] = useState<Prompt | null>(null);
@@ -45,10 +45,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
 
   const isOwnProfile = username === currentUser.username;
 
-  // Favorite logic: Filter prompts that are favorited by the current user
-  const favoritePrompts = useMemo(() => {
-    return prompts.filter(p => p.isFavorited);
-  }, [prompts]);
+
 
   // Fetch user if not own profile
   useEffect(() => {
@@ -116,10 +113,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
     [prompts, username]);
 
   // Determine which prompts to show based on tab
+  // Determine which prompts to show based on tab
   const displayPrompts = useMemo(() => {
-    if (activeTab === 'favorites') return favoritePrompts;
     return userCreatedPrompts;
-  }, [activeTab, userCreatedPrompts, favoritePrompts]);
+  }, [activeTab, userCreatedPrompts]);
 
   // --- Statistics Calculation (Based on created prompts) ---
   const totalViews = userCreatedPrompts.reduce((acc, curr) => acc + curr.viewCount, 0);
@@ -320,15 +317,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
             POSTS
           </button>
 
-          {isOwnProfile && (
-            <button
-              onClick={() => setActiveTab('favorites')}
-              className={`flex items-center gap-2 py-3 text-xs font-medium tracking-widest cursor-pointer -mt-[1px] border-t ${activeTab === 'favorites' ? 'border-white text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-            >
-              <Heart size={12} />
-              FAVORITES
-            </button>
-          )}
+
 
           <button
             onClick={() => setActiveTab('insights')}
@@ -374,14 +363,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
       ) : (
         <div className="flex flex-col items-center justify-center py-20 text-slate-500">
           <div className="w-16 h-16 rounded-full border-2 border-slate-800 flex items-center justify-center mb-4">
-            {activeTab === 'favorites' ? <Heart size={32} /> : <Grid size={32} />}
+            <Grid size={32} />
           </div>
           <h3 className="text-xl font-bold text-white">
-            {activeTab === 'favorites' ? 'No Favorites Yet' : 'No Posts Yet'}
+            No Posts Yet
           </h3>
-          {activeTab === 'favorites' && (
-            <p className="mt-2 text-sm text-slate-400">Tap the heart on any prompt to save it here.</p>
-          )}
         </div>
       )}
 

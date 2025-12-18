@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Eye, Tag, Check, Heart, Star, ExternalLink, MessageCircle, Trash2, Share2 } from 'lucide-react';
+import { Copy, Eye, Tag, Check, Star, ExternalLink, MessageCircle, Trash2, Share2 } from 'lucide-react';
 import { Prompt, AIModel, User } from '../types';
-import { copyPromptApi, deletePromptApi, toggleFavoriteApi } from '../services/apiService';
+import { copyPromptApi, deletePromptApi } from '../services/apiService';
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -13,13 +13,7 @@ interface PromptCardProps {
 
 const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh, onAuthorClick, onClick }) => {
   const [copied, setCopied] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const isAuthor = currentUser.username === prompt.authorId || currentUser.username === prompt.author?.username; // Handle relation
-
-  useEffect(() => {
-    // Favorites initialized from prop
-    setIsFavorite(!!prompt.isFavorited);
-  }, [prompt.id, currentUser.username]);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -34,18 +28,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh,
     }
   };
 
-  const handleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const res = await toggleFavoriteApi(prompt.id, currentUser.username);
-      if (res.success) {
-        setIsFavorite(res.favorited);
-        // Optional: onRefresh() if we want to update global counts, but might be too noisy for local toggle
-      }
-    } catch (e) {
-      console.error('Toggle favorite error', e);
-    }
-  };
+
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -185,14 +168,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh,
             <span className="text-xs font-medium">{prompt.viewCount}</span>
           </div>
 
-          {/* Like Button */}
-          <button
-            onClick={handleFavorite}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-colors ${isFavorite ? 'text-red-500 bg-red-500/10' : 'text-slate-500 hover:text-red-400 hover:bg-slate-800'}`}
-            title={isFavorite ? "Unlike" : "Like"}
-          >
-            <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
-          </button>
+
 
           {/* Copy Button (Primary Action) */}
           <button
