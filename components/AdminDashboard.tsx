@@ -21,6 +21,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     const [feedbackUrl, setFeedbackUrl] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
 
+    // Ad Settings State
+    const [adSettings, setAdSettings] = useState({
+        adClient: '',
+        adSlot: '',
+        adStatus: 'test', // test, active, disabled
+    });
+    const [savingAdSettings, setSavingAdSettings] = useState(false);
+
     // Security Challenge State
     const [challengeOpen, setChallengeOpen] = useState(false);
     const [challengeAction, setChallengeAction] = useState('');
@@ -37,10 +45,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
             const feedbackData = await getFeedbackApi();
             setFeedback(Array.isArray(feedbackData) ? feedbackData : []);
 
+            // Fetch Settings
             const settingsData = await getSettingApi('feedbackUrl');
             if (settingsData && settingsData.success) {
                 setFeedbackUrl(settingsData.value);
             }
+
+            // Fetch Ad Settings
+            const clientRes = await getSettingApi('adClient');
+            const slotRes = await getSettingApi('adSlot');
+            const statusRes = await getSettingApi('adStatus');
+
+            setAdSettings({
+                adClient: clientRes.success ? clientRes.value : '',
+                adSlot: slotRes.success ? slotRes.value : '',
+                adStatus: statusRes.success ? statusRes.value : 'test',
+            });
+
         } catch (e) {
             console.error("Failed to load admin data", e);
         }
@@ -64,7 +85,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     };
 
     const handleSaveSettings = () => {
-        triggerChallenge('Save Settings', async () => {
+        triggerChallenge('Save General Settings', async () => {
             setSavingSettings(true);
             try {
                 const res = await updateSettingApi('feedbackUrl', feedbackUrl, currentUser.id);
@@ -77,6 +98,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                 alert('Error saving settings');
             } finally {
                 setSavingSettings(false);
+            }
+        });
+    };
+
+    const handleSaveAdSettings = () => {
+        triggerChallenge('Update Ad Configuration', async () => {
+            setSavingAdSettings(true);
+            try {
+                await updateSettingApi('adClient', adSettings.adClient, currentUser.id);
+                await updateSettingApi('adSlot', adSettings.adSlot, currentUser.id);
+                await updateSettingApi('adStatus', adSettings.adStatus, currentUser.id);
+                alert('Ad settings updated successfully');
+            } catch (e) {
+                alert('Error saving ad settings');
+            } finally {
+                setSavingAdSettings(false);
             }
         });
     };
@@ -426,6 +463,78 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {savingSettings ? 'Saving...' : <><Save size={18} /> Save Changes</>}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* AdSense Configuration */}
+                                <div className="bg-black/30 p-6 rounded-xl border border-slate-800">
+                                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <div className="bg-amber-500/10 p-1 rounded text-amber-500 font-bold text-xs border border-amber-500/20">ADS</div>
+                                        AdSense Configuration
+                                    </h3>
+
+                                    <div className="space-y-4">
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-400 mb-2">Publisher ID (Client)</label>
+                                                <input
+                                                    type="text"
+                                                    value={adSettings.adClient}
+                                                    onChange={(e) => setAdSettings(p => ({ ...p, adClient: e.target.value }))}
+                                                    placeholder="ca-pub-xxxxxxxxxxxxxxxx"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-400 mb-2">Ad Slot ID</label>
+                                                <input
+                                                    type="text"
+                                                    value={adSettings.adSlot}
+                                                    onChange={(e) => setAdSettings(p => ({ ...p, adSlot: e.target.value }))}
+                                                    placeholder="1234567890"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">Ad Status</label>
+                                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-fit">
+                                                <button
+                                                    onClick={() => setAdSettings(p => ({ ...p, adStatus: 'active' }))}
+                                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${adSettings.adStatus === 'active' ? 'bg-green-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                                                >
+                                                    Active
+                                                </button>
+                                                <button
+                                                    onClick={() => setAdSettings(p => ({ ...p, adStatus: 'test' }))}
+                                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${adSettings.adStatus === 'test' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                                                >
+                                                    Test Mode
+                                                </button>
+                                                <button
+                                                    onClick={() => setAdSettings(p => ({ ...p, adStatus: 'disabled' }))}
+                                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${adSettings.adStatus === 'disabled' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                                                >
+                                                    Disabled
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                Active: Live ads are shown. Test Mode: Shows placeholders (safe for dev). Disabled: Hides all ads.
+                                            </p>
+                                        </div>
+
+                                    </div>
+
+                                    <div className="mt-6 flex justify-end">
+                                        <button
+                                            onClick={handleSaveAdSettings}
+                                            disabled={savingAdSettings}
+                                            className="flex items-center gap-2 px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {savingAdSettings ? 'Saving...' : <><Save size={18} /> Update Ads</>}
                                         </button>
                                     </div>
                                 </div>

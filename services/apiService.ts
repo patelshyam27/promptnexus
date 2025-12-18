@@ -76,6 +76,15 @@ export const getSettingApi = async (key: string) => {
   }
 };
 
+export const getAllSettingsApi = async () => {
+  try {
+    const res = await apiGet('/settings');
+    return res;
+  } catch (e) {
+    return { success: false, settings: {} };
+  }
+};
+
 export const updateSettingApi = async (key: string, value: string, authorId: string) => {
   return apiPut(`/settings/${key}`, { value, authorId });
 };

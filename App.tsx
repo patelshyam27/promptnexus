@@ -35,8 +35,23 @@ function App() {
     search: '',
   });
 
+  const [adConfig, setAdConfig] = useState<{ client?: string, slot?: string, status?: string } | null>(null);
+
   // On initial load, check for shared links and refresh user session
   useEffect(() => {
+    // Load System Settings (Ads)
+    import('./services/apiService').then(({ getAllSettingsApi }) => {
+      getAllSettingsApi().then(res => {
+        if (res && res.success && res.settings) {
+          setAdConfig({
+            client: res.settings.adClient,
+            slot: res.settings.adSlot,
+            status: res.settings.adStatus
+          });
+        }
+      });
+    });
+
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
@@ -334,7 +349,7 @@ function App() {
                           />
                           {/* Insert Ad after every 5th post */}
                           {(index + 1) % 5 === 0 && (
-                            <GoogleAd />
+                            <GoogleAd config={adConfig} />
                           )}
                         </React.Fragment>
                       ))

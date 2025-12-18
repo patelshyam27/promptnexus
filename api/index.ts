@@ -382,6 +382,21 @@ app.post('/api/prompts/:id/favorite', async (req: Request, res: Response) => {
 
 // --- System Settings ---
 
+app.get('/api/settings', async (_req: Request, res: Response) => {
+  try {
+    const settings = await prisma.systemSetting.findMany();
+    // Convert array to object for easier frontend consumption
+    const settingsMap = settings.reduce((acc: any, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+
+    res.json({ success: true, settings: settingsMap });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 app.get('/api/settings/:key', async (req: Request, res: Response) => {
   try {
     const setting = await prisma.systemSetting.findUnique({
