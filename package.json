@@ -7,18 +7,25 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "postinstall": "cd api && npm install && npx prisma generate"
+    "postinstall": "prisma generate --schema=api/prisma/schema.prisma"
   },
   "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@prisma/client": "^5.22.0",
+    "lucide-react": "^0.554.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "lucide-react": "^0.554.0",
-    "@google/genai": "^1.30.0",
     "recharts": "^3.4.1"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/body-parser": "^1.19.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.3",
     "@vitejs/plugin-react": "^5.0.0",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
