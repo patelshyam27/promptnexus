@@ -75,14 +75,17 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentU
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
                     <div className="w-16 h-16 bg-gradient-to-tr from-teal-400 to-blue-600 rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-teal-500/20">
-                        <span className="text-2xl font-bold text-white">P</span>
+                        <span className="text-2xl font-bold text-white">SP</span>
                     </div>
-                    <h2 className="text-xl font-bold text-white mb-2">PromptNexus</h2>
-                    <p className="text-slate-400 text-sm mb-6">
-                        The ultimate library for AI prompts. Discover, share, and organize your favorite prompts for Gemini, GPT-4, and more.
+                    <h2 className="text-xl font-bold text-white mb-2">Hey, I am Shyam Patel</h2>
+                    <p className="text-slate-400 text-sm mb-4">
+                        I made this website using Google Antigravity.
                     </p>
-                    <div className="text-xs text-slate-500 mb-6">
-                        Version 1.0.0
+                    <div className="bg-slate-800/50 rounded-lg p-3 mb-6 border border-slate-700">
+                        <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Collaboration</div>
+                        <a href="mailto:shyamabp27@gmail.com" className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors">
+                            shyamabp27@gmail.com
+                        </a>
                     </div>
                     <button onClick={() => setActiveModal(null)} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors">
                         Close
