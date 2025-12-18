@@ -269,7 +269,11 @@ function App() {
               </div>
               <div onClick={() => navigateToProfile(currentUser.username)}>
                 <div className={`w-9 h-9 rounded-full p-[1px] ${activeTab === 'profile' ? 'bg-primary-500' : 'bg-slate-700'}`}>
-                  <img src={currentUser.avatarUrl} className="w-full h-full rounded-full bg-black object-cover" />
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.username}`}
+                    className="w-full h-full rounded-full bg-black object-cover"
+                    alt={currentUser.username}
+                  />
                 </div>
               </div>
             </div>
