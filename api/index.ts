@@ -201,7 +201,7 @@ app.get('/api/prompts', async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
       include: {
         author: true,
-        favoritedBy: true
+        // favoritedBy: true // Temporarily disabled to debug crash
       }
     });
     const formatted = prompts.map(p => ({
@@ -210,9 +210,9 @@ app.get('/api/prompts', async (req: Request, res: Response) => {
       tags: p.tags ? p.tags.split(',').filter(Boolean) : [],
       authorDetails: p.author || null,
       // Add favorite info
-      favoritedBy: p.favoritedBy ? p.favoritedBy.map(f => f.userId) : [],
-      isFavorited: typeof userId === 'string' && p.favoritedBy ? p.favoritedBy.some(f => f.userId === userId) : false,
-      favoriteCount: p.favoritedBy ? p.favoritedBy.length : 0
+      favoritedBy: [], // Disabled
+      isFavorited: false,
+      favoriteCount: 0
     }));
     res.json(formatted);
   } catch (e: any) {
