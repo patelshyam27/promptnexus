@@ -23,6 +23,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   // Edit Form State
   const [editDisplayName, setEditDisplayName] = useState('');
@@ -115,8 +116,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   // Determine which prompts to show based on tab
   // Determine which prompts to show based on tab
   const displayPrompts = useMemo(() => {
-    return userCreatedPrompts;
-  }, [activeTab, userCreatedPrompts]);
+    let filtered = userCreatedPrompts;
+    if (selectedModel) {
+      filtered = filtered.filter(p => p.model === selectedModel);
+    }
+    return filtered;
+  }, [activeTab, userCreatedPrompts, selectedModel]);
 
   // --- Statistics Calculation (Based on created prompts) ---
   const totalViews = userCreatedPrompts.reduce((acc, curr) => acc + curr.viewCount, 0);
@@ -293,14 +298,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
       {modelUsage.length > 0 && (
         <div className="flex gap-6 overflow-x-auto px-4 md:px-10 mb-8 no-scrollbar pb-2">
           {modelUsage.map(([model, count]) => (
-            <div key={model} className="flex flex-col items-center space-y-1 shrink-0 cursor-pointer group">
-              <div className={`w-16 h-16 rounded-full p-[2px] border ${getModelColor(model)} transition-transform duration-200 group-hover:scale-105`}>
-                <div className="w-full h-full rounded-full bg-slate-900 flex flex-col items-center justify-center border border-slate-800">
-                  <span className="text-xs font-bold text-white">{count}</span>
+            <div
+              key={model}
+              onClick={() => setSelectedModel(selectedModel === model ? null : model)}
+              className="flex flex-col items-center space-y-1 shrink-0 cursor-pointer group"
+            >
+              <div className={`w-16 h-16 rounded-full p-[2px] border transition-all duration-200 group-hover:scale-105 ${selectedModel === model ? 'border-primary-500 shadow-lg shadow-primary-500/20 scale-105' : getModelColor(model)}`}>
+                <div className={`w-full h-full rounded-full flex flex-col items-center justify-center border transition-colors ${selectedModel === model ? 'bg-slate-800 border-primary-500/50' : 'bg-slate-900 border-slate-800'}`}>
+                  <span className={`text-xs font-bold ${selectedModel === model ? 'text-white' : 'text-slate-200'}`}>{count}</span>
                   <span className="text-[9px] text-slate-400 uppercase">Prompts</span>
                 </div>
               </div>
-              <span className="text-[10px] md:text-xs text-slate-300 max-w-[70px] text-center leading-tight truncate px-1">{model}</span>
+              <span className={`text-[10px] md:text-xs max-w-[70px] text-center leading-tight truncate px-1 transition-colors ${selectedModel === model ? 'text-primary-400 font-semibold' : 'text-slate-300'}`}>{model}</span>
             </div>
           ))}
         </div>

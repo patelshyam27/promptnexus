@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { AIModel, PromptCategory, NewPromptInput, User, Prompt } from '../types';
+import SearchableDropdown from './SearchableDropdown';
 import { generateDescriptionWithGemini } from '../services/geminiService';
 import { validatePromptInput } from '../services/validation';
 
@@ -125,23 +126,14 @@ const AddPromptModal: React.FC<AddPromptModalProps> = ({ isOpen, onClose, onAdd,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Target Model <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  list="model-options"
-                  placeholder="e.g. Gemini 1.5 Pro"
-                  className={`w-full bg-slate-800 border rounded-lg px-4 py-2.5 text-white focus:outline-none transition-all ${errors.model ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-700 focus:border-primary-500'}`}
+                <SearchableDropdown
+                  label="Target Model *"
+                  options={Object.values(AIModel)}
                   value={model}
-                  onChange={(e) => setModel(e.target.value)}
+                  onChange={setModel}
+                  placeholder="Select or search model..."
+                  error={errors.model}
                 />
-                <datalist id="model-options">
-                  {Object.values(AIModel).map((m) => (
-                    <option key={m} value={m} />
-                  ))}
-                </datalist>
-                {errors.model && <p className="text-red-500 text-xs mt-1 flex items-center"><AlertCircle size={10} className="mr-1" /> {errors.model}</p>}
               </div>
             </div>
 
@@ -182,19 +174,14 @@ const AddPromptModal: React.FC<AddPromptModalProps> = ({ isOpen, onClose, onAdd,
             {/* Category & Tags */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className={`w-full bg-slate-800 border rounded-lg px-4 py-2.5 text-white focus:outline-none transition-all ${errors.category ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-700 focus:border-primary-500'}`}
+                <SearchableDropdown
+                  label="Category *"
+                  options={Object.values(PromptCategory)}
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as PromptCategory)}
-                >
-                  {Object.values(PromptCategory).map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                {errors.category && <p className="text-red-500 text-xs mt-1 flex items-center"><AlertCircle size={10} className="mr-1" /> {errors.category}</p>}
+                  onChange={(val) => setCategory(val as PromptCategory)}
+                  placeholder="Select category..."
+                  error={errors.category}
+                />
               </div>
 
               {/* Tags Input */}
