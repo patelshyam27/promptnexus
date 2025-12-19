@@ -74,7 +74,12 @@ const AddPromptModal: React.FC<AddPromptModalProps> = ({ isOpen, onClose, onAdd,
     // 3. Auto-generate description
     const description = await generateDescriptionWithGemini(content);
     const finalNewPrompt = { ...inputForValidation, description };
-    onAdd(finalNewPrompt);
+
+    if (initialData && onUpdate) {
+      onUpdate(initialData.id, finalNewPrompt);
+    } else {
+      onAdd(finalNewPrompt);
+    }
 
     resetForm();
     onClose();

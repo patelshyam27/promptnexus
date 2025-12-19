@@ -256,6 +256,34 @@ app.post('/api/prompts', async (req: Request, res: Response) => {
 
 
 
+
+// Update prompt (Admin/User Edit)
+app.put('/api/prompts/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { title, content, model, tags, description, modelUrl, category, imageUrl } = req.body;
+
+  try {
+    const tagsString = Array.isArray(tags) ? tags.join(',') : (tags || null);
+
+    const updated = await prisma.prompt.update({
+      where: { id },
+      data: {
+        title, content, model,
+        description: description || null,
+        modelUrl: modelUrl || null,
+        category: category || 'Other',
+        imageUrl: imageUrl || null,
+        tags: tagsString
+      }
+    });
+
+    res.json({ success: true, prompt: updated });
+  } catch (e) {
+    console.error('Update prompt error', e);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Feedback
 app.post('/api/feedback', async (req: Request, res: Response) => {
   const { from, message } = req.body;
