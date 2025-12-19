@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, Prompt } from '../types';
-import { getPromptsApi, deletePromptApi } from '../services/apiService';
+import { getPromptsApi, deletePromptApi, updatePromptApi } from '../services/apiService';
 import { getUsersApi, deleteUserApi, updateUserApi, getFeedbackApi, markFeedbackReadApi, deleteFeedbackApi, getSettingApi, updateSettingApi } from '../services/apiService';
-import { Trash2, Users, FileText, Search, LogOut, Shield, Settings, Save, AlertCircle, Database, Download } from 'lucide-react';
+import { Trash2, Users, FileText, Search, LogOut, Shield, Settings, Save, AlertCircle, Database, Download, Edit3, CheckCircle, XCircle, PieChart as PieChartIcon, BarChart as BarChartIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import PasswordChallengeModal from './PasswordChallengeModal';
+import AddPromptModal from './AddPromptModal';
 
 interface AdminDashboardProps {
     currentUser: User;
@@ -11,7 +13,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }) => {
-    const [activeTab, setActiveTab] = useState<'users' | 'prompts' | 'feedback' | 'settings' | 'database'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'prompts' | 'feedback' | 'settings' | 'database' | 'analytics'>('analytics');
     const [users, setUsers] = useState<User[]>([]);
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +22,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     // Settings State
     const [feedbackUrl, setFeedbackUrl] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
+
+    // Prompt Edit State
+    const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
 
     // Ad Settings State
     const [adSettings, setAdSettings] = useState({
@@ -102,6 +107,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         });
     };
 
+    const handleUpdatePrompt = async (id: string, input: any) => {
+        try {
+            // Assume prompt update API logic, might need to import updatePromptApi
+            // Yes, it's already imported
+            await updatePromptApi(id, input);
+            setEditingPrompt(null);
+            refreshData();
+        } catch (e) {
+            alert('Failed to update prompt');
+        }
+    };
+
     const handleSaveAdSettings = () => {
         triggerChallenge('Update Ad Configuration', async () => {
             setSavingAdSettings(true);
@@ -161,10 +178,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         const newBio = prompt('Edit bio', user.bio || '');
         if (newBio === null) return;
 
+        if (newBio === null) return;
+
+        const shouldVerify = window.confirm(`Toggle verification for ${user.username}? Current: ${user.isVerified ? 'Verified' : 'Unverified'}`);
+
         await updateUserApi({
             username: user.username,
             displayName: newDisplay,
-            bio: newBio
+            bio: newBio,
+            isVerified: shouldVerify ? !user.isVerified : user.isVerified
         });
         refreshData();
     };
@@ -177,6 +199,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         link.href = jsonString;
         link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.json`;
         link.click();
+    };
+
+    // Calculate Analytics
+    const modelStats = prompts.reduce((acc: any, curr) => {
+        const m = curr.model || 'Other';
+        acc[m] = (acc[m] || 0) + 1;
+        return acc;
+    }, {});
+    const modelData = Object.entries(modelStats).map(([name, value]) => ({ name, value }));
+
+    const categoryStats = prompts.reduce((acc: any, curr) => {
+        acc[curr.category] = (acc[curr.category] || 0) + 1;
+        return acc;
+    }, {});
+    const categoryData = Object.entries(categoryStats).map(([name, value]) => ({ name, value }));
+
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+    // Determine Active Status (Active = posted in last 30 days)
+    const getUserStatus = (username: string) => {
+        const userPrompts = prompts.filter(p => p.author === username);
+        if (userPrompts.length === 0) return 'Inactive';
+
+        const lastPostDate = new Date(Math.max(...userPrompts.map(p => new Date(p.createdAt).getTime())));
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        return lastPostDate > thirtyDaysAgo ? 'Active' : 'Inactive';
     };
 
     const filteredUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -241,6 +291,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                 {/* Tabs */}
                 <div className="flex overflow-x-auto gap-4 border-b border-slate-800 mb-6 no-scrollbar">
                     <button
+                        onClick={() => setActiveTab('analytics')}
+                        className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'analytics' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        Analytics
+                        {activeTab === 'analytics' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-pink-500" />}
+                    </button>
+                    <button
                         onClick={() => setActiveTab('users')}
                         className={`pb-3 px-4 font-semibold text-sm transition-colors whitespace-nowrap relative ${activeTab === 'users' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                     >
@@ -299,6 +356,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                 <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold">
                                     <tr>
                                         <th className="px-6 py-4">User</th>
+                                        <th className="px-6 py-4">Status</th>
                                         <th className="px-6 py-4">Role</th>
                                         <th className="px-6 py-4">Actions</th>
                                     </tr>
@@ -314,6 +372,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                                         <div className="text-slate-500">@{user.username}</div>
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {getUserStatus(user.username) === 'Active' ? (
+                                                    <span className="flex items-center gap-1 text-green-400 text-xs font-bold uppercase tracking-wider">
+                                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Active
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Inactive</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 {user.isAdmin ? (
@@ -337,6 +404,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                                     title="Edit User"
                                                 >
                                                     Edit
+                                                </button>
+
+                                                <button
+                                                    onClick={async () => {
+                                                        if (window.confirm(`Toggle verification for ${user.username}?`)) {
+                                                            await updateUserApi({ username: user.username, isVerified: !user.isVerified });
+                                                            refreshData();
+                                                        }
+                                                    }}
+                                                    className={`p-2 rounded-lg transition-colors ${user.isVerified ? 'text-blue-400 hover:bg-blue-500/10' : 'text-slate-600 hover:text-blue-400 hover:bg-slate-800'}`}
+                                                    title={user.isVerified ? "Remove Verification" : "Verify User"}
+                                                >
+                                                    {user.isVerified ? <CheckCircle size={18} /> : <Shield size={18} />}
                                                 </button>
 
                                                 {!user.isAdmin && (
@@ -390,6 +470,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                                     title="Delete Prompt"
                                                 >
                                                     <Trash2 size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingPrompt(prompt)}
+                                                    className="p-2 text-slate-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                                                    title="Edit Prompt"
+                                                >
+                                                    <Edit3 size={18} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -626,9 +713,90 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
                                 </div>
                             </div>
                         </div>
+                    ) : (
+                    // Analytics Tab
+                    <div className="p-6">
+                        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                            <PieChartIcon className="text-pink-500" /> Site Analytics
+                        </h2>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            {/* Model Distribution */}
+                            <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                                <h3 className="text-lg font-bold text-white mb-4">AI Model Usage</h3>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={modelData}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={false}
+                                                outerRadius={100}
+                                                fill="#8884d8"
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            >
+                                                {modelData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Category Distribution */}
+                            <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                                <h3 className="text-lg font-bold text-white mb-4">Prompt Categories</h3>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={categoryData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                            <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} interval={0} angle={-45} textAnchor="end" height={60} />
+                                            <YAxis stroke="#94a3b8" />
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} cursor={{ fill: '#334155', opacity: 0.2 }} />
+                                            <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+                            <h3 className="text-lg font-bold text-white mb-4">User Activity Audit</h3>
+                            <p className="text-sm text-slate-400 mb-4">Users who have not posted in the last 30 days are marked Inactive.</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-slate-800 p-4 rounded-lg">
+                                    <div className="text-slate-400 text-xs uppercase">Active Users</div>
+                                    <div className="text-2xl font-bold text-green-400">{users.filter(u => getUserStatus(u.username) === 'Active').length}</div>
+                                </div>
+                                <div className="bg-slate-800 p-4 rounded-lg">
+                                    <div className="text-slate-400 text-xs uppercase">Inactive Users</div>
+                                    <div className="text-2xl font-bold text-slate-400">{users.filter(u => getUserStatus(u.username) === 'Inactive').length}</div>
+                                </div>
+                                <div className="bg-slate-800 p-4 rounded-lg">
+                                    <div className="text-slate-400 text-xs uppercase">Avg Prompts/User</div>
+                                    <div className="text-2xl font-bold text-blue-400">{(prompts.length / (users.length || 1)).toFixed(1)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     )}
                 </div>
             </div>
+
+            {/* Edit Prompt Modal (Admin) */}
+            <AddPromptModal
+                isOpen={!!editingPrompt}
+                onClose={() => setEditingPrompt(null)}
+                onAdd={() => { }}
+                onUpdate={handleUpdatePrompt}
+                initialData={editingPrompt}
+                currentUser={currentUser}
+            />
         </div>
     );
 };

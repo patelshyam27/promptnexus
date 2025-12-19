@@ -108,7 +108,7 @@ app.get('/api/users', async (_req: Request, res: Response) => {
 
 // Update Profile
 app.put('/api/users/profile', async (req: Request, res: Response) => {
-  const { username, displayName, bio, gender, instagramUrl, linkdealUrl, avatarUrl } = req.body;
+  const { username, displayName, bio, gender, instagramUrl, linkdealUrl, avatarUrl, isVerified } = req.body;
   if (!username) return res.status(400).json({ success: false, message: 'Missing username' });
   try {
     const updated = await prisma.user.update({
@@ -119,7 +119,8 @@ app.put('/api/users/profile', async (req: Request, res: Response) => {
         gender,
         instagramUrl,
         linkdealUrl,
-        avatarUrl
+        avatarUrl,
+        isVerified: isVerified !== undefined ? isVerified : undefined
       }
     });
     // @ts-ignore
