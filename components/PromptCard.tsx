@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Eye, Tag, Check, Star, ExternalLink, Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Zap, Bookmark, Image as ImageIcon } from 'lucide-react';
+import { Copy, Eye, Tag, Check, Star, ExternalLink, Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, Zap, Bookmark, Image as ImageIcon, Verified } from 'lucide-react';
 import { Prompt, AIModel, User } from '../types';
 import { copyPromptApi, deletePromptApi } from '../services/apiService';
 import { contentToProxiedImageUrl } from '../utils/imageUtils';
@@ -173,7 +173,10 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh,
             />
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-xs font-bold text-slate-300 group-hover/author:text-white">{prompt.author}</span>
+            <span className="text-xs font-bold text-slate-300 group-hover/author:text-white flex items-center gap-1">
+              {prompt.author}
+              {prompt.authorDetails?.isVerified && <Verified size={12} className="text-blue-500 fill-blue-500/20" />}
+            </span>
             <span className="text-[10px] text-slate-500">Author</span>
           </div>
         </button>
