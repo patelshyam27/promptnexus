@@ -243,6 +243,16 @@ export const incrementCopyCount = (id: string, username: string): void => {
   recordInteraction(username, id, 'copy');
 };
 
+export const updatePrompt = (id: string, updates: Partial<Prompt>): Prompt | null => {
+  const prompts = getPrompts();
+  const idx = prompts.findIndex(p => p.id === id);
+  if (idx === -1) return null;
+  const updated = { ...prompts[idx], ...updates };
+  prompts[idx] = updated;
+  localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts));
+  return updated;
+};
+
 export const deletePrompt = (id: string): void => {
   const prompts = getPrompts();
   const updated = prompts.filter(p => p.id !== id);
