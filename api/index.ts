@@ -120,6 +120,8 @@ app.put('/api/users/profile', async (req: Request, res: Response) => {
         instagramUrl,
         linkdealUrl,
         avatarUrl,
+        linkdealUrl,
+        avatarUrl,
         isVerified: isVerified !== undefined ? isVerified : undefined
       }
     });

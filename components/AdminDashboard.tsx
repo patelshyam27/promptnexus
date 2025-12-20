@@ -19,7 +19,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     const [searchTerm, setSearchTerm] = useState('');
     const [feedback, setFeedback] = useState<any[]>([]);
 
-    // Settings State
     const [feedbackUrl, setFeedbackUrl] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
 
@@ -55,6 +54,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
             if (settingsData && settingsData.success) {
                 setFeedbackUrl(settingsData.value);
             }
+
 
             // Fetch Ad Settings
             const clientRes = await getSettingApi('adClient');
@@ -93,12 +93,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         triggerChallenge('Save General Settings', async () => {
             setSavingSettings(true);
             try {
-                const res = await updateSettingApi('feedbackUrl', feedbackUrl, currentUser.id);
-                if (res.success) {
-                    alert('Settings saved successfully');
-                } else {
-                    alert('Failed to save settings: ' + (res.message || 'Unknown error'));
-                }
+                await updateSettingApi('feedbackUrl', feedbackUrl, currentUser.id);
+
+
+                alert('Settings saved successfully');
             } catch (e) {
                 alert('Error saving settings');
             } finally {
@@ -108,15 +106,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
     };
 
     const handleUpdatePrompt = async (id: string, input: any) => {
-        try {
-            // Assume prompt update API logic, might need to import updatePromptApi
-            // Yes, it's already imported
-            await updatePromptApi(id, input);
-            setEditingPrompt(null);
-            refreshData();
-        } catch (e) {
-            alert('Failed to update prompt');
-        }
+        triggerChallenge('Update Prompt', async () => {
+            try {
+                await updatePromptApi(id, input);
+                setEditingPrompt(null);
+                refreshData();
+            } catch (e) {
+                alert('Failed to update prompt');
+            }
+        });
     };
 
     const handleSaveAdSettings = () => {
@@ -162,33 +160,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onLogout }
         }
     };
 
-    const handlePromote = (username: string) => {
-        alert("Promote API not implemented yet");
-    };
 
-    const handleDemote = (username: string) => {
-        alert("Demote API not implemented yet");
-    };
 
     const handleEditUser = async (user: User) => {
-        // Edit User Info doesn't strictly need password challange as it's less destructive, but good practice.
-        // Skipping for now to avoid too much friction on minor edits, or can add if requested.
         const newDisplay = prompt('Edit display name', user.displayName);
         if (newDisplay === null) return;
         const newBio = prompt('Edit bio', user.bio || '');
         if (newBio === null) return;
 
-        if (newBio === null) return;
-
         const shouldVerify = window.confirm(`Toggle verification for ${user.username}? Current: ${user.isVerified ? 'Verified' : 'Unverified'}`);
 
-        await updateUserApi({
-            username: user.username,
-            displayName: newDisplay,
-            bio: newBio,
-            isVerified: shouldVerify ? !user.isVerified : user.isVerified
+        triggerChallenge(`Update Profile for ${user.username}`, async () => {
+            await updateUserApi({
+                username: user.username,
+                displayName: newDisplay,
+                bio: newBio,
+                isVerified: shouldVerify ? !user.isVerified : user.isVerified
+            });
+            refreshData();
         });
-        refreshData();
     };
 
     const handleExport = (data: any, filename: string) => {
