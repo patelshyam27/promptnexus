@@ -6,7 +6,7 @@ import { contentToProxiedImageUrl } from '../utils/imageUtils';
 
 interface PromptCardProps {
   prompt: Prompt;
-  currentUser: User;
+  currentUser: User | null;
   onRefresh: () => void;
   onAuthorClick?: (author: string) => void;
   onClick?: () => void;
@@ -14,7 +14,7 @@ interface PromptCardProps {
 
 const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh, onAuthorClick, onClick }) => {
   const [copied, setCopied] = useState(false);
-  const isAuthor = currentUser.username === prompt.authorId || currentUser.username === prompt.author?.username; // Handle relation
+  const isAuthor = currentUser?.username === prompt.authorId || currentUser?.username === prompt.author?.username; // Handle relation
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();

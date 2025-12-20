@@ -5,7 +5,7 @@ import PromptDetailModal from './PromptDetailModal';
 
 interface ExploreViewProps {
   prompts: Prompt[];
-  currentUser: User;
+  currentUser: User | null;
   onRefresh: () => void;
 }
 

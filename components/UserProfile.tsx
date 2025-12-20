@@ -10,7 +10,7 @@ export const FALLBACK_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w
 interface UserProfileProps {
   username: string;
   prompts: Prompt[];
-  currentUser: User;
+  currentUser: User | null;
   onRefresh: () => void;
   onUserUpdate?: () => void;
 }
@@ -44,13 +44,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
     return url;
   };
 
-  const isOwnProfile = username === currentUser.username;
-
+  const isOwnProfile = currentUser && username === currentUser.username;
 
 
   // Fetch user if not own profile
   useEffect(() => {
-    if (isOwnProfile) {
+    if (isOwnProfile && currentUser) {
       setProfileUser(currentUser);
     } else {
       getUserApi(username).then((data: any) => {
@@ -73,6 +72,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   };
 
   const openEditModal = () => {
+    if (!currentUser) return;
     setEditDisplayName(currentUser.displayName);
     setEditBio(currentUser.bio);
     setEditGender(currentUser.gender || 'male');
@@ -82,6 +82,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ username, prompts, currentUse
   };
 
   const handleSaveProfile = async () => {
+    if (!currentUser) return;
     const newAvatarUrl = generateAvatarUrl(currentUser.username, editGender);
 
     await updateUserApi({

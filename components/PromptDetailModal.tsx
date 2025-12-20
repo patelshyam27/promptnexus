@@ -7,7 +7,7 @@ import { contentToProxiedImageUrl } from '../utils/imageUtils';
 interface PromptDetailModalProps {
   prompt: Prompt | null;
   user: User; // The author of the prompt or relevant user context for display
-  currentUser: User; // The logged in user
+  currentUser: User | null; // The logged in user
   onClose: () => void;
   onRefresh: () => void;
 }
@@ -29,7 +29,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
       viewPromptApi(prompt.id).catch(console.error);
 
     }
-  }, [prompt, currentUser.username]);
+  }, [prompt, currentUser?.username]);
 
   if (!prompt) return null;
 
@@ -48,6 +48,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
 
 
   const handleRate = async (rating: number) => {
+    if (!currentUser) return; // Cannot rate if not logged in
     setUserRating(rating);
     await ratePromptApi(prompt.id, rating, currentUser.username);
     onRefresh();
@@ -147,7 +148,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
             <span className="font-bold text-sm text-white hover:text-slate-300 cursor-pointer">{prompt.author}</span>
           </div>
           <div className="flex items-center gap-2 relative">
-            {currentUser.username === prompt.author && (
+            {currentUser?.username === prompt.author && (
               <button
                 onClick={handleDelete}
                 className="text-slate-400 hover:text-red-500 transition-colors p-2 hidden md:block"
@@ -162,7 +163,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
               </button>
               {showMenu && (
                 <div className="absolute right-0 top-full mt-2 w-32 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                  {currentUser.username === prompt.author && (
+                  {currentUser?.username === prompt.author && (
                     <>
 
                       <button

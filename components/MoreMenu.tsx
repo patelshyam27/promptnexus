@@ -6,11 +6,12 @@ interface MoreMenuProps {
     isOpen: boolean;
     onClose: () => void;
     onLogout: () => void;
+    onLogin?: () => void;
     currentUser: User | null;
     className?: string; // Allow overriding position
 }
 
-const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentUser, className }) => {
+const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, onLogin, currentUser, className }) => {
     const [activeModal, setActiveModal] = useState<'settings' | 'about' | null>(null);
     const [themeColor, setThemeColor] = useState('teal'); // Default, actual implementation would need context
 
@@ -121,12 +122,21 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, onLogout, currentU
                         <MessageSquare size={18} /> Feedback
                     </button>
                     <div className="h-px bg-slate-800 my-1" />
-                    <button
-                        onClick={onLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors text-sm font-medium"
-                    >
-                        <LogOut size={18} /> Log Out
-                    </button>
+                    {currentUser ? (
+                        <button
+                            onClick={onLogout}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors text-sm font-medium"
+                        >
+                            <LogOut size={18} /> Log Out
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onLogin}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-primary-400 hover:text-primary-300 hover:bg-primary-500/10 rounded-lg transition-colors text-sm font-medium"
+                        >
+                            <LogOut size={18} /> Log In
+                        </button>
+                    )}
                 </div>
             </div>
         </>

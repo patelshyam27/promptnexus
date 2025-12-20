@@ -74,7 +74,7 @@ export interface Prompt {
   imageUrl?: string;
   author: string;
   authorDetails?: User;
-  createdAt: string; // ISO String for frontend
+  createdAt: number; // Timestamp
   viewCount: number;
   copyCount: number;
   rating: number;      // Average rating (0-5)

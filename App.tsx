@@ -120,16 +120,22 @@ function App() {
 
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
+    setIsAuthModalOpen(false); // Close modal on success
     // Persist session locally (safely)
     try {
       localStorage.setItem('promptnexus_session_v2', JSON.stringify(user));
     } catch (e) {
       console.warn("Failed to save session to localStorage", e);
     }
+
+    // If user was trying to create, open create modal now?
+    // For now simple flow: just login. User can click create again.
+
     if (user.isAdmin) {
       setActiveTab('admin');
     } else {
-      setSelectedProfileUser(user.username);
+      // If we are on home, refresh prompts to potentially see personalized stuff?
+      // If we were on landing, stay on home.
       refreshPrompts();
     }
   };
@@ -137,6 +143,17 @@ function App() {
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
+    setActiveTab('home'); // Go to home on logout
+  };
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const handleCreateClick = () => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+    } else {
+      setIsModalOpen(true);
+    }
   };
 
   const handleAddPrompt = async (input: NewPromptInput) => {
@@ -160,16 +177,6 @@ function App() {
     setSelectedProfileUser(username);
     setActiveTab('profile');
     window.scrollTo(0, 0);
-  };
-
-  const handleEditPrompt = (prompt: Prompt) => {
-    setActivePrompt(null); // Close detailed view if open (though usually called from card)
-    // We need to set editing prompt state which will open AddPromptModal in edit mode
-    // But App.tsx uses isModalOpen boolean for CREATE.
-    // We need a separate state for EDIT or reuse isModalOpen with initialData
-    // Let's check AddPromptModal props usage in App.tsx
-    // It accepts initialData. 
-    // We need state: [editingPrompt, setEditingPrompt]
   };
 
   // Main filter logic for the "Home Feed"
@@ -203,10 +210,7 @@ function App() {
     );
   };
 
-  // Return Auth Screen if not logged in
-  if (!currentUser) {
-    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
-  }
+  // Removed early return for !currentUser
 
   return (
     <div className="flex h-screen bg-black text-slate-50 font-sans overflow-hidden">
@@ -223,9 +227,9 @@ function App() {
         <div className="space-y-2 flex-1">
           <NavItem tab="home" icon={Home} label="Home" />
           <NavItem tab="explore" icon={Search} label="Explore" />
-          <NavItem tab="create" icon={PlusSquare} label="Create" onClick={() => setIsModalOpen(true)} />
+          <NavItem tab="create" icon={PlusSquare} label="Create" onClick={handleCreateClick} />
 
-          <div onClick={() => navigateToProfile(currentUser.username)}>
+          <div onClick={() => currentUser ? navigateToProfile(currentUser.username) : setIsAuthModalOpen(true)}>
             <NavItem tab="profile" icon={UserCircle} label="Profile" />
           </div>
 
@@ -241,6 +245,7 @@ function App() {
               isOpen={isMoreMenuOpen}
               onClose={() => setIsMoreMenuOpen(false)}
               onLogout={handleLogout}
+              onLogin={() => setIsAuthModalOpen(true)}
               currentUser={currentUser}
             />
           </div>
@@ -272,12 +277,12 @@ function App() {
                 <Zap size={20} className="text-primary-500" fill="currentColor" />
                 <span className="font-bold text-lg">PromptNexus</span>
               </div>
-              <div onClick={() => navigateToProfile(currentUser.username)}>
+              <div onClick={() => currentUser ? navigateToProfile(currentUser.username) : setIsAuthModalOpen(true)}>
                 <div className={`w-9 h-9 rounded-full p-[1px] ${activeTab === 'profile' ? 'bg-primary-500' : 'bg-slate-700'}`}>
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.username}`}
+                    src={currentUser ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.username}` : "https://api.dicebear.com/7.x/avataaars/svg?seed=guest"}
                     className="w-full h-full rounded-full bg-black object-cover"
-                    alt={currentUser.username}
+                    alt={currentUser?.username || "Guest"}
                   />
                 </div>
               </div>
@@ -289,6 +294,7 @@ function App() {
                 isOpen={isMoreMenuOpen}
                 onClose={() => setIsMoreMenuOpen(false)}
                 onLogout={handleLogout}
+                onLogin={() => setIsAuthModalOpen(true)}
                 currentUser={currentUser}
                 className="fixed right-2 bottom-20 shadow-xl border border-slate-800/50 z-50"
               />
@@ -348,7 +354,7 @@ function App() {
                       <div className="flex flex-col items-center justify-center py-20 text-slate-500">
                         <p>No prompts yet. Be the first to create one!</p>
                         <button
-                          onClick={() => setIsModalOpen(true)}
+                          onClick={handleCreateClick}
                           className="mt-4 text-primary-400 hover:text-primary-300 font-semibold"
                         >
                           Create a Prompt
@@ -386,7 +392,7 @@ function App() {
           <nav className="md:hidden fixed bottom-0 left-0 w-full bg-black border-t border-slate-800 h-16 z-50 flex items-center justify-around px-2">
             <NavItem tab="home" icon={Home} label="" />
             <NavItem tab="explore" icon={Search} label="" />
-            <NavItem tab="create" icon={PlusSquare} label="" onClick={() => setIsModalOpen(true)} />
+            <NavItem tab="create" icon={PlusSquare} label="" onClick={handleCreateClick} />
             <button
               onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
               className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-200 group justify-center ${isMoreMenuOpen ? 'text-white font-bold' : 'text-slate-400 hover:text-white'}`}
@@ -395,18 +401,29 @@ function App() {
             </button>
           </nav>
 
-          <AddPromptModal
-            isOpen={isModalOpen}
-            onClose={() => { setIsModalOpen(false); }}
-            onAdd={handleAddPrompt}
-            currentUser={currentUser}
-          />
+          {currentUser && (
+            <AddPromptModal
+              isOpen={isModalOpen}
+              onClose={() => { setIsModalOpen(false); }}
+              onAdd={handleAddPrompt}
+              currentUser={currentUser}
+            />
+          )}
+
+          {/* Auth Modal */}
+          {isAuthModalOpen && (
+            <AuthScreen
+              onAuthSuccess={handleAuthSuccess}
+              isModal={true}
+              onClose={() => setIsAuthModalOpen(false)}
+            />
+          )}
 
           <PromptDetailModal
             prompt={activePrompt}
-            isOpen={!!activePrompt}
-            onClose={() => setActivePrompt(null)}
+            user={activePrompt?.authorDetails || ({} as User)} // Safe fallback if not needed for logic, mostly display
             currentUser={currentUser}
+            onClose={() => setActivePrompt(null)}
             onRefresh={refreshPrompts}
           />
 
