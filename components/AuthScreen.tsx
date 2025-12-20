@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Zap, ArrowRight, UserPlus, LogIn, Loader2, User as UserIcon, Eye, EyeOff } from 'lucide-react';
-import { registerUserApi, loginUserApi, FALLBACK_AVATAR } from '../services/apiService';
-import { User } from '../types';
+import { registerUserApi, loginUserApi, getPromptsApi, FALLBACK_AVATAR } from '../services/apiService';
+import { User, Prompt } from '../types';
 
 interface AuthScreenProps {
   onAuthSuccess: (user: User) => void;
@@ -19,6 +19,36 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Stats State
+  const [stats, setStats] = useState({
+    totalPrompts: 0,
+    promptUsage: 0,
+    websiteVisits: 0
+  });
+
+  // Fetch Stats on Mount
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const prompts: any = await getPromptsApi();
+        if (Array.isArray(prompts)) {
+          const totalPrompts = prompts.length;
+          const promptUsage = prompts.reduce((acc, p) => acc + (p.copyCount || 0), 0);
+          const totalViews = prompts.reduce((acc, p) => acc + (p.viewCount || 0), 0);
+
+          setStats({
+            totalPrompts,
+            promptUsage: promptUsage, // "Usage" = strictly copies now
+            websiteVisits: totalViews // "Visits" = strictly views now
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch stats", e);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // Helper to generate preview URL live
   const getAvatarUrl = (seed: string, genderType: 'male' | 'female') => {
@@ -98,12 +128,28 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-500/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="flex flex-col items-center mb-8 z-10">
-        <div className="bg-gradient-to-br from-primary-500 to-primary-700 p-3 rounded-xl shadow-2xl shadow-primary-500/30 mb-4">
+      <div className="flex flex-col items-center mb-8 z-10 w-full max-w-lg text-center">
+        <div className="bg-gradient-to-br from-primary-500 to-primary-700 p-3 rounded-xl shadow-2xl shadow-primary-500/30 mb-4 animate-bounce-slow">
           <Zap size={40} className="text-white" fill="white" />
         </div>
-        <h1 className="text-4xl font-bold text-white tracking-tight">PromptNexus</h1>
-        <p className="text-slate-400 mt-2">The community for AI pioneers</p>
+        <h1 className="text-4xl font-bold text-white tracking-tight mb-2">PromptNexus</h1>
+        <p className="text-slate-400 mb-6">The community for AI pioneers</p>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-4 w-full mb-8">
+          <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 p-3 rounded-xl flex flex-col items-center">
+            <span className="text-xl font-bold text-white">{stats.websiteVisits > 0 ? stats.websiteVisits.toLocaleString() : '12.5k+'}</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mt-1">Interactions</span>
+          </div>
+          <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 p-3 rounded-xl flex flex-col items-center">
+            <span className="text-xl font-bold text-primary-400">{stats.totalPrompts > 0 ? stats.totalPrompts.toLocaleString() : '2.8k+'}</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mt-1">Total Prompts</span>
+          </div>
+          <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 p-3 rounded-xl flex flex-col items-center">
+            <span className="text-xl font-bold text-purple-400">{stats.promptUsage > 0 ? stats.promptUsage.toLocaleString() : '85k+'}</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mt-1">Prompt Uses</span>
+          </div>
+        </div>
       </div>
 
       <div className="w-full max-w-md bg-slate-900/50 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 shadow-2xl z-10 transition-all duration-300">
