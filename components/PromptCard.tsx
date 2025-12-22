@@ -167,8 +167,8 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, currentUser, onRefresh,
         >
           <div className="w-8 h-8 rounded-full bg-slate-800 p-0.5 ring-1 ring-slate-700 group-hover/author:ring-primary-500 transition-all">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`}
-              className="w-full h-full rounded-full bg-slate-900"
+              src={prompt.authorDetails?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`}
+              className="w-full h-full rounded-full bg-slate-900 object-cover"
               alt={prompt.author}
             />
           </div>

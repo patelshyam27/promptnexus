@@ -142,7 +142,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
         <div className="p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[1.5px]">
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`} className="w-full h-full rounded-full bg-slate-900" alt={prompt.author} />
+              <img src={prompt.authorDetails?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`} className="w-full h-full rounded-full bg-slate-900 object-cover" alt={prompt.author} />
             </div>
             <span className="font-bold text-sm text-white hover:text-slate-300 cursor-pointer">{prompt.author}</span>
           </div>
@@ -190,7 +190,7 @@ const PromptDetailModal: React.FC<PromptDetailModalProps> = ({ prompt, user, cur
           {/* Post Caption */}
           <div className="flex gap-3 mb-6">
             <div className="w-8 h-8 shrink-0">
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`} className="w-8 h-8 rounded-full bg-slate-800" alt={prompt.author} />
+              <img src={prompt.authorDetails?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${prompt.author}`} className="w-8 h-8 rounded-full bg-slate-800 object-cover" alt={prompt.author} />
             </div>
             <div className="text-sm">
               <span className="font-bold text-white mr-2">{prompt.author}</span>
